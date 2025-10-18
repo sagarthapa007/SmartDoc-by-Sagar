@@ -1,8 +1,3 @@
-/**
- * 🌐 AVAILABLE_DOMAINS
- * Self-updating domain registry for SmartDoc Universal Analyzer.
- * Add new domains here when new analyzers are introduced.
- */
 export const AVAILABLE_DOMAINS = [
   { code: "finance", label: "Finance & Sales" },
   { code: "inventory", label: "Inventory & Supply Chain" },

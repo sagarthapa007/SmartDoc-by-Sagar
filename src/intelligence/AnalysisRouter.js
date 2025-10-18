@@ -8,8 +8,9 @@ import { FinanceAnalyzer } from "./domains/FinanceAnalyzer.js";
 import { GenericAnalyzer } from "./domains/GenericAnalyzer.js";
 
 export class AnalysisRouter {
-  static route(data) {
+  static route(data, overrideDomain = null) {
     const context = UniversalPatternDetector.analyze(data);
+    if (overrideDomain) context.domain = overrideDomain;
     const result = (() => {
       switch (context.domain) {
         case "personal_finance": return PersonalFinanceAnalyzer.analyzeDomain(data, context);

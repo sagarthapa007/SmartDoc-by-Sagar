@@ -1,5 +1,5 @@
 /**
- * 🧭 UniversalPatternDetector.js
+ * 🧭 UniversalPatternDetector.js — Phase G1
  * Domain-agnostic detector for ANY structured dataset.
  */
 export class UniversalPatternDetector {
