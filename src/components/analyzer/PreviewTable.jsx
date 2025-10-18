@@ -1,11 +1,10 @@
-import React from "react";
-import { FixedSizeList as List } from "react-window";
+import React, { Suspense } from "react";
 
-/**
- * 🧭 PreviewTable
- * Renders a virtualized preview of the dataset (first 200 rows).
- * Uses react-window for smooth scrolling and performance.
- */
+// Dynamically import react-window with no SSR
+const FixedSizeList = React.lazy(() => 
+  import("react-window").then(mod => ({ default: mod.FixedSizeList }))
+);
+
 export default function PreviewTable({ headers = [], rows = [] }) {
   const height = 260;
   const rowHeight = 32;
@@ -73,43 +72,45 @@ export default function PreviewTable({ headers = [], rows = [] }) {
             ))}
           </div>
 
-          {/* Virtualized Rows */}
-          <List
-            height={height}
-            itemCount={displayRows.length}
-            itemSize={rowHeight}
-            width={totalWidth}
-          >
-            {({ index, style }) => {
-              const row = displayRows[index];
-              return (
-                <div
-                  style={{
-                    ...style,
-                    display: "grid",
-                    gridTemplateColumns: `repeat(${headers.length}, ${columnWidth}px)`,
-                    borderBottom: "1px solid var(--border)",
-                    alignItems: "center",
-                    fontSize: 13,
-                  }}
-                >
-                  {headers.map((h, j) => (
-                    <div
-                      key={j}
-                      style={{
-                        padding: "0 10px",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {String(row[h] ?? "")}
-                    </div>
-                  ))}
-                </div>
-              );
-            }}
-          </List>
+          {/* Virtualized Rows with Suspense */}
+          <Suspense fallback={<div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading preview...</div>}>
+            <FixedSizeList
+              height={height}
+              itemCount={displayRows.length}
+              itemSize={rowHeight}
+              width={totalWidth}
+            >
+              {({ index, style }) => {
+                const row = displayRows[index];
+                return (
+                  <div
+                    style={{
+                      ...style,
+                      display: "grid",
+                      gridTemplateColumns: `repeat(${headers.length}, ${columnWidth}px)`,
+                      borderBottom: "1px solid var(--border)",
+                      alignItems: "center",
+                      fontSize: 13,
+                    }}
+                  >
+                    {headers.map((h, j) => (
+                      <div
+                        key={j}
+                        style={{
+                          padding: "0 10px",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {String(row[h] ?? "")}
+                      </div>
+                    ))}
+                  </div>
+                );
+              }}
+            </FixedSizeList>
+          </Suspense>
         </div>
       </div>
     </div>
