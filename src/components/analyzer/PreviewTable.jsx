@@ -1,4 +1,4 @@
-import * as ReactWindow from 'react-window'
+import { FixedSizeList } from "react-window/dist/index.esm.js";
 const List = ReactWindow.FixedSizeList || ReactWindow.default.FixedSizeList;
 export default function PreviewTable({ headers=[], rows=[] }){
   const height = 260, rowHeight = 32, displayRows = rows.slice(0, 200);
