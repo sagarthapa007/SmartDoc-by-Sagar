@@ -4,7 +4,6 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
-
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -19,24 +18,24 @@ export default defineConfig({
     },
   },
 
-  // ✅ Ensures react-window is properly included in production
   optimizeDeps: {
     include: ["react-window"],
+    force: true, // ✅ ensure react-window is bundled properly
   },
 
   build: {
     outDir: "dist",
-    emptyOutDir: true, // ✅ always clears dist before building
+    emptyOutDir: true,
     commonjsOptions: {
       include: [/react-window/, /node_modules/],
     },
     rollupOptions: {
-      output: {
-        manualChunks: undefined, // ✅ disables code splitting issues
-      },
+      external: [], // no external packages are excluded
     },
-    chunkSizeWarningLimit: 1000, // optional: suppress size warning
+    chunkSizeWarningLimit: 1500, // optional - silence 500kB warnings
   },
 
   server: {
-    port: 517
+    port: 5174,
+  },
+});
