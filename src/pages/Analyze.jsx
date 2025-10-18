@@ -4,7 +4,7 @@ import Histogram from "@charts/Histogram";
 import Heatmap from "@charts/Heatmap";
 import { useSession } from "@context/SessionContext.jsx";
 
-// 🧠 Phase F Intelligence
+// 🧩 Intelligence Components
 import MultiFilterPanel from "@/components/analyzer/MultiFilterPanel.jsx";
 import ExecutiveSummary from "@/components/analyzer/ExecutiveSummary.jsx";
 import QualityScore from "@/components/analyzer/QualityScore.jsx";
@@ -13,7 +13,6 @@ import NarrativePanel from "@/components/panels/NarrativePanel.jsx";
 import RevenueTrendChart from "@/charts/RevenueTrendChart.jsx";
 import TopPerformersChart from "@/charts/TopPerformersChart.jsx";
 
-import { BusinessDetector } from "@/intelligence/BusinessDetector.js";
 import { calculateQualityScore } from "@/utils/qualityMetrics.js";
 import { exportToCSV } from "@/utils/exportUtils.js";
 import { buildRevenueTrend, topBy, quickSummary } from "@/sampleData.js";
@@ -27,7 +26,69 @@ export default function Analyze() {
   const [activeTab, setActiveTab] = useState("overview");
   const [exportLoading, setExportLoading] = useState(false);
 
-  // Early return for no data
+  // 🧩 Universal Intelligence Placeholder
+  const universalContext = useMemo(() => {
+    if (!ds?.headers) return { dataType: "unknown", confidence: 0.1 };
+    const numericCols = ds.headers.filter(h =>
+      filteredData.some(r => !isNaN(parseFloat(r[h])))
+    );
+    return {
+      dataType: "generic_dataset",
+      confidence: Math.min(0.3 + numericCols.length / ds.headers.length, 1).toFixed(2),
+      primaryMetric: numericCols[0] || "auto_metric",
+    };
+  }, [ds, filteredData]);
+
+  // 🧮 Data Quality
+  const qualityMetrics = useMemo(
+    () => calculateQualityScore(filteredData),
+    [filteredData]
+  );
+
+  // 📈 Derived Insights
+  const revenueTrendData = useMemo(
+    () => buildRevenueTrend(filteredData),
+    [filteredData]
+  );
+  const topPerformersData = useMemo(
+    () => topBy(filteredData, "Customer", "revenue"),
+    [filteredData]
+  );
+  const businessSummary = useMemo(
+    () => quickSummary(filteredData, universalContext.primaryMetric),
+    [filteredData, universalContext.primaryMetric]
+  );
+
+  // 📊 KPI Configuration
+  const executiveKPIs = {
+    primaryMetric: universalContext.primaryMetric,
+    confidence: universalContext.confidence,
+    trends: { growth: 0.153, direction: "positive" },
+    dataType: universalContext.dataType,
+    rowCount: filteredData.length,
+    columnCount: ds?.headers?.length || 0,
+  };
+
+  // 📤 Export Handler
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      await exportToCSV(filteredData);
+    } catch (error) {
+      console.error("Export failed:", error);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const analysisTabs = [
+    { id: "overview", label: "Overview", icon: "📊" },
+    { id: "technical", label: "Technical", icon: "🔍" },
+    { id: "business", label: "Business", icon: "💼" },
+    { id: "quality", label: "Quality", icon: "✅" },
+  ];
+
+  // 🚫 No dataset case
   if (!ds) {
     return (
       <div className="flex flex-col h-[calc(100vh-96px)] items-center justify-center text-center p-8">
@@ -38,8 +99,8 @@ export default function Analyze() {
         <p className="text-sm text-[var(--text-muted)] max-w-md mb-4">
           Upload a dataset to unlock powerful analysis and intelligence features.
         </p>
-        <button 
-          onClick={() => window.location.href = '/upload'}
+        <button
+          onClick={() => (window.location.href = "/upload")}
           className="btn btn-primary"
         >
           Go to Upload
@@ -48,179 +109,102 @@ export default function Analyze() {
     );
   }
 
-  // 🧩 Intelligence Layer Computations
-  const businessContext = useMemo(() => 
-    BusinessDetector.analyze({ headers: ds.headers, rows: filteredData }), 
-    [filteredData, ds.headers]
-  );
-
-  const qualityMetrics = useMemo(() => 
-    calculateQualityScore(filteredData), 
-    [filteredData]
-  );
-
-  const revenueTrendData = useMemo(() => 
-    buildRevenueTrend(filteredData), 
-    [filteredData]
-  );
-
-  const topPerformersData = useMemo(() => 
-    topBy(filteredData, "Customer", "revenue"), 
-    [filteredData]
-  );
-
-  const businessSummary = useMemo(() => 
-    quickSummary(filteredData, businessContext.primaryMetric || "revenue"), 
-    [filteredData, businessContext.primaryMetric]
-  );
-
-  // 📊 KPI Configuration
-  const executiveKPIs = {
-    primaryMetric: businessContext.primaryMetric || "revenue",
-    confidence: businessContext.confidence,
-    trends: { growth: 0.153, direction: "positive" },
-    dataType: businessContext.dataType,
-    rowCount: filteredData.length,
-    columnCount: ds.headers.length
-  };
-
-  // 📤 Export Handler
-  const handleExport = async () => {
-    setExportLoading(true);
-    try {
-      await exportToCSV(filteredData);
-      // Optional: Add success toast here
-    } catch (error) {
-      console.error("Export failed:", error);
-      // Optional: Add error toast here
-    } finally {
-      setExportLoading(false);
-    }
-  };
-
-  // 🎨 Tab Configuration
-  const analysisTabs = [
-    { id: "overview", label: "Overview", icon: "📊" },
-    { id: "technical", label: "Technical", icon: "🔍" },
-    { id: "business", label: "Business", icon: "💼" },
-    { id: "quality", label: "Quality", icon: "✅" },
-  ];
-
+  // ==========================
+  // 💡 MAIN ANALYSIS INTERFACE
+  // ==========================
   return (
     <div className="flex flex-col h-[calc(100vh-96px)] overflow-hidden bg-[var(--background)] text-[var(--text)]">
-      
-      {/* === HEADER: Controls & Navigation === */}
+      {/* === HEADER === */}
       <header className="flex-none border-b border-[var(--border)] bg-[var(--surface)]">
-        <div className="px-6 py-4">
-          {/* Title & Actions Row */}
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-xl font-semibold text-[var(--text-strong)]">
-                Data Intelligence Dashboard
-              </h1>
-              <p className="text-sm text-[var(--text-muted)] mt-1">
-                Analyzing {filteredData.length.toLocaleString()} records • {businessContext.dataType} dataset
-              </p>
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleExport}
-                disabled={exportLoading}
-                className="btn btn-outline flex items-center gap-2 text-sm disabled:opacity-50"
-              >
-                {exportLoading ? (
-                  <>⏳ Exporting...</>
-                ) : (
-                  <>📥 Export CSV</>
-                )}
-              </button>
-              
-              {/* View Toggle */}
-              <div className="flex bg-[var(--muted)] rounded-lg p-1">
-                {analysisTabs.map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      activeTab === tab.id
-                        ? "bg-[var(--background)] text-[var(--text-strong)] shadow-sm"
-                        : "text-[var(--text-muted)] hover:text-[var(--text)]"
-                    }`}
-                  >
-                    <span>{tab.icon}</span>
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+        <div className="px-6 py-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-semibold text-[var(--text-strong)]">
+              Data Intelligence Dashboard
+            </h1>
+            <p className="text-sm text-[var(--text-muted)] mt-1">
+              Analyzing {filteredData.length.toLocaleString()} records •{" "}
+              {universalContext.dataType}
+            </p>
           </div>
 
-          {/* Quick Stats Bar */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExport}
+              disabled={exportLoading}
+              className="btn btn-outline flex items-center gap-2 text-sm disabled:opacity-50"
+            >
+              {exportLoading ? "⏳ Exporting..." : "📥 Export CSV"}
+            </button>
+
+            <div className="flex bg-[var(--muted)] rounded-lg p-1">
+              {analysisTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    activeTab === tab.id
+                      ? "bg-[var(--background)] text-[var(--text-strong)] shadow-sm"
+                      : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  <span>{tab.icon}</span>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="px-6 pb-4">
           <StatCards headers={ds.headers} rows={filteredData} />
         </div>
       </header>
 
-      {/* === MAIN CONTENT: Scrollable Analysis === */}
+      {/* === MAIN CONTENT === */}
       <main className="flex-1 overflow-auto">
         <div className="p-6 space-y-6">
-          
-          {/* 🎯 INTELLIGENCE LAYER - Always Visible */}
-          <section className="space-y-4">
-            {/* Context & Quality Banner */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <ExecutiveSummary 
-                kpis={executiveKPIs} 
-                trends={executiveKPIs.trends} 
-                summary={businessSummary} 
-                className="lg:col-span-2"
-              />
-              <QualityScore 
-                quality={qualityMetrics} 
-                dataType={businessContext.dataType}
-              />
-            </div>
-
-            {/* Interactive Filters */}
-            <MultiFilterPanel 
-              data={ds.rows} 
-              onFilter={setFilteredData}
-              context={businessContext}
+          {/* 🎯 Universal Context + Quality */}
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <ExecutiveSummary
+              kpis={executiveKPIs}
+              trends={executiveKPIs.trends}
+              summary={businessSummary}
+              className="lg:col-span-2"
             />
+            <QualityScore quality={qualityMetrics} dataType={universalContext.dataType} />
           </section>
 
-          {/* 📈 VISUALIZATION SECTIONS - Tab Controlled */}
+          {/* 🧩 Filters */}
+          <MultiFilterPanel
+            data={ds.rows}
+            onFilter={setFilteredData}
+            context={universalContext}
+          />
+
+          {/* 📈 Tabs */}
           {activeTab === "overview" && (
             <section className="space-y-6">
-              {/* Business Intelligence */}
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <RevenueTrendChart 
-                  data={revenueTrendData} 
+                <RevenueTrendChart
+                  data={revenueTrendData}
                   title="Revenue Trend Analysis"
                   timeframe="Last 12 Months"
                 />
-                <TopPerformersChart 
-                  data={topPerformersData} 
+                <TopPerformersChart
+                  data={topPerformersData}
                   metric="revenue"
                   title="Top Performing Customers"
                   limit={8}
                 />
               </div>
-
-              {/* AI Narrative */}
               <NarrativePanel
                 insights={{
-                  technical: {
-                    summary: {
-                      rowCount: filteredData.length,
-                      colCount: ds.headers.length,
-                    },
-                  },
-                  business: { context: businessContext },
+                  technical: { summary: { rowCount: filteredData.length, colCount: ds.headers.length } },
+                  business: { context: universalContext },
                   quality: qualityMetrics,
                 }}
-                context={businessContext}
+                context={universalContext}
               />
             </section>
           )}
@@ -229,32 +213,18 @@ export default function Analyze() {
             <section className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="card">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-semibold">Correlation Matrix</h3>
-                    <span className="text-xs badge badge-outline">Interactive</span>
-                  </div>
+                  <h3 className="text-base font-semibold mb-4">Correlation Matrix</h3>
                   <Heatmap headers={ds.headers} rows={filteredData} height="320px" />
                 </div>
-
                 <div className="card">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-semibold">Distribution Analysis</h3>
-                    <span className="text-xs badge badge-outline">Statistical</span>
-                  </div>
+                  <h3 className="text-base font-semibold mb-4">Distribution Analysis</h3>
                   <Histogram headers={ds.headers} rows={filteredData} height="320px" />
                 </div>
               </div>
-
               <InsightCards
                 insights={{
-                  technical: {
-                    summary: {
-                      rowCount: filteredData.length,
-                      colCount: ds.headers.length,
-                      missingAvg: 0,
-                    },
-                  },
-                  business: { context: { dataType: businessContext.dataType } },
+                  technical: { summary: { rowCount: filteredData.length, colCount: ds.headers.length } },
+                  business: { context: { dataType: universalContext.dataType } },
                 }}
                 variant="technical"
               />
@@ -264,28 +234,22 @@ export default function Analyze() {
           {activeTab === "business" && (
             <section className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <RevenueTrendChart 
-                  data={revenueTrendData} 
+                <RevenueTrendChart
+                  data={revenueTrendData}
                   title="Business Performance"
-                  showForecast={true}
+                  showForecast
                 />
-                <TopPerformersChart 
-                  data={topPerformersData} 
+                <TopPerformersChart
+                  data={topPerformersData}
                   metric="revenue"
                   title="Customer Rankings"
-                  showMetrics={true}
+                  showMetrics
                 />
               </div>
-              
               <InsightCards
                 insights={{
-                  technical: {
-                    summary: {
-                      rowCount: filteredData.length,
-                      colCount: ds.headers.length,
-                    },
-                  },
-                  business: { context: businessContext },
+                  business: { context: universalContext },
+                  technical: { summary: { rowCount: filteredData.length, colCount: ds.headers.length } },
                 }}
                 variant="business"
               />
@@ -297,46 +261,15 @@ export default function Analyze() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="card">
                   <h3 className="text-base font-semibold mb-4">Data Quality Dashboard</h3>
-                  <QualityScore 
-                    quality={qualityMetrics} 
-                    showBreakdown={true}
-                    showRecommendations={true}
+                  <QualityScore
+                    quality={qualityMetrics}
+                    showBreakdown
+                    showRecommendations
                   />
-                </div>
-                
-                <div className="card">
-                  <h3 className="text-base font-semibold mb-4">Data Health Summary</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Completeness</span>
-                      <span className="text-sm font-medium">{qualityMetrics.dimensions?.completeness || 0}%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Accuracy Score</span>
-                      <span className="text-sm font-medium">{qualityMetrics.dimensions?.accuracy || 0}%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Consistency</span>
-                      <span className="text-sm font-medium">{qualityMetrics.dimensions?.consistency || 0}%</span>
-                    </div>
-                  </div>
                 </div>
               </div>
             </section>
           )}
-
-          {/* 📝 LEGACY COMPATIBILITY SECTION */}
-          <section className="mt-8 pt-6 border-t border-[var(--border)]">
-            <div className="card bg-[var(--muted)]/30">
-              <h3 className="text-sm font-semibold mb-2 text-[var(--text-muted)]">
-                Legacy Analysis Engine
-              </h3>
-              <p className="text-sm opacity-75 leading-relaxed">
-                Basic statistical analysis and visualization. For advanced intelligence, 
-                use the <strong>Enterprise Intelligence Layer</strong> above.
-              </p>
-            </div>
-          </section>
         </div>
       </main>
     </div>
