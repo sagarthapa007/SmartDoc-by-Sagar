@@ -3,12 +3,16 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "scripts": {
-  "prebuild": "chmod +x node_modules/.bin/vite || echo 'Skipping chmod (Windows/Vercel safe)'",
+"scripts": {
+  "prebuild": "chmod +x ./node_modules/.bin/vite || echo 'Skip chmod on Windows/Vercel'",
+  "build": "npx vite build",
   "dev": "vite",
-  "build": "vite build",
   "preview": "vite preview"
 },
+"engines": {
+  "node": ">=18"
+}
+,
 "engines": {
   "node": ">=18"
 }
