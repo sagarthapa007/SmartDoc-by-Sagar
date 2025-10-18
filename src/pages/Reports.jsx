@@ -1,0 +1,1 @@
+export default function Reports(){return <div className='card'>Reports builder (Phase 2B)</div>}

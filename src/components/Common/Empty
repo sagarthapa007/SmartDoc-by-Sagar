@@ -1,0 +1,35 @@
+import React from "react";
+import { Database, FileSpreadsheet, Layers, BarChart3, History } from "lucide-react";
+
+/**
+ * 🔹 UNIVERSAL EMPTY STATE COMPONENT
+ * Clean, reusable, and consistent placeholder for SmartDoc pages.
+ *
+ * Props:
+ * - icon: "upload" | "analyze" | "compare" | "report" | "history"
+ * - title: string
+ * - desc: string
+ * - action (optional): JSX element (e.g., <button>Upload Now</button>)
+ */
+export default function EmptyState({ icon = "upload", title, desc, action }) {
+  const icons = {
+    upload: <Database size={44} className="text-[var(--brand1)] opacity-90" />,
+    analyze: <BarChart3 size={44} className="text-[var(--module-reports)] opacity-90" />,
+    compare: <Layers size={44} className="text-[var(--module-comparison)] opacity-90" />,
+    report: <FileSpreadsheet size={44} className="text-[var(--module-reports)] opacity-90" />,
+    history: <History size={44} className="text-[var(--module-history)] opacity-90" />,
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-[calc(100vh-140px)] fade-in text-center space-y-3">
+      <div className="p-4 rounded-2xl bg-[var(--surface-muted)] shadow-sm border border-[var(--border)]">
+        {icons[icon] || icons.upload}
+      </div>
+
+      <h2 className="text-lg font-semibold text-gradient">{title}</h2>
+      <p className="text-sm text-[var(--text-secondary)] max-w-sm">{desc}</p>
+
+      {action && <div className="mt-3">{action}</div>}
+    </div>
+  );
+}

@@ -1,0 +1,753 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* ==============================
+   SMARTDOC ENTERPRISE – ENHANCED THEME
+   ============================== */
+
+:root {
+  /* Surfaces */
+  --background: #f8fafc;
+  --card: #ffffff;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-muted: #f1f5f9;
+  --muted: #f1f5f9;
+  
+  /* Text */
+  --text: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --text-inverse: #ffffff;
+  
+  /* Borders */
+  --border: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --divider: #e2e8f0;
+  
+  /* Brand Colors */
+  --brand1: #3b82f6;
+  --brand2: #06b6d4;
+  --brand: var(--brand1);
+  --brand-hover: #2563eb;
+  --brand-light: #dbeafe;
+  --accent: var(--brand2);
+  --accent-hover: #0891b2;
+  
+  /* Status Colors */
+  --success: #10b981;
+  --success-bg: #d1fae5;
+  --warning: #f59e0b;
+  --warning-bg: #fef3c7;
+  --error: #ef4444;
+  --error-bg: #fee2e2;
+  --info: #3b82f6;
+  --info-bg: #dbeafe;
+  
+  /* Module tokens */
+  --module-comparison: #8b5cf6;
+  --module-export: #10b981;
+  --module-reports: #f59e0b;
+  --module-email: #3b82f6;
+  --module-history: #6366f1;
+  --module-gap: 1.5rem;
+  --module-padding: 2rem;
+  --module-radius: 0.75rem;
+  
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Border Radius */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+  
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  
+  /* Typography */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Gradients */
+  --gradient-brand: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%);
+}
+
+html.dark {
+  --background: #0f172a;
+  --card: #1e293b;
+  --surface: #1e293b;
+  --surface-elevated: #334155;
+  --surface-muted: #1e293b;
+  --muted: #334155;
+  
+  --text: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --text-inverse: #0f172a;
+  
+  --border: #334155;
+  --border-hover: #475569;
+  --divider: #334155;
+  
+  --brand: #60a5fa;
+  --brand-hover: #3b82f6;
+  --brand-light: rgba(96, 165, 250, 0.1);
+  
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.6), 0 4px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================== */
+/* BASE STYLES */
+/* ============================== */
+
+body {
+  font-family: var(--font-sans);
+  background: var(--background);
+  color: var(--text);
+  transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+/* ============================== */
+/* ENHANCED COMPONENTS */
+/* ============================== */
+
+/* Header */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 95%, transparent);
+  backdrop-filter: blur(8px);
+  transition: all var(--transition-base);
+}
+
+/* Section Container */
+.section {
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 1.5rem 1rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+/* Cards */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.badge:hover {
+  background: var(--gradient-brand);
+  color: var(--text-inverse);
+  border-color: transparent;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.badge-primary {
+  background: var(--brand-light);
+  color: var(--brand);
+  border-color: var(--brand);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: 0.625rem 1.25rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-primary,
+button.analyze-btn {
+  background: var(--gradient-brand);
+  color: var(--text-inverse);
+  border: none;
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-muted);
+  border-color: var(--border-hover);
+}
+
+/* KPI Cards */
+.kpis {
+  display: grid;
+  gap: var(--space-lg);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.kpi {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.kpi:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.kpi .icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.kpi .label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.kpi .value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+/* Kbd */
+.kbd {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  background: var(--surface-muted);
+}
+
+/* Skeleton */
+.skeleton {
+  border-radius: var(--radius-lg);
+  background: var(--muted);
+  height: var(--h, 20px);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Search */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition: all var(--transition-fast);
+}
+
+.search:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-light);
+}
+
+/* Drawer */
+.drawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 360px;
+  background: var(--card);
+  border-left: 1px solid var(--border);
+  padding: 1rem;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-xl);
+}
+
+.drawer.open {
+  transform: translateX(0);
+}
+
+/* Grid Layouts */
+.grid-two {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .grid-two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ============================== */
+/* SCROLLBARS */
+/* ============================== */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* ============================== */
+/* ANIMATIONS */
+/* ============================== */
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadein {
+  animation: fadein 0.4s ease-out forwards;
+}
+
+.fade-in {
+  animation: fadein 0.3s ease-out forwards;
+}
+
+
+.slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================== */
+/* UTILITY CLASSES */
+/* ============================== */
+
+.text-gradient {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+html.dark .glass {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(51, 65, 85, 0.3);
+}
+
+/* ============================== */
+/* RESPONSIVE */
+/* ============================== */
+
+@media (max-width: 768px) {
+  .card {
+    padding: var(--space-md);
+  }
+  
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+  }
+  
+  .drawer {
+    width: 100%;
+  }
+}
+/* ============================== */
+/* 🔧 SMARTDOC ENTERPRISE HEADER POLISH */
+/* ============================== */
+
+/* Layout balance & padding */
+header {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  transition: all var(--transition-base);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Prevent menu + search overlap on medium screens */
+@media (max-width: 1250px) {
+  header .max-w-7xl {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+}
+
+/* Main navigation links */
+header nav a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+header nav a:hover {
+  color: var(--brand);
+  background: var(--brand-light);
+  transform: translateY(-1px);
+}
+
+header nav a.active {
+  background: var(--brand-light);
+  color: var(--brand);
+  border: 1px solid var(--brand-hover);
+  box-shadow: 0 0 6px rgba(59,130,246,0.25);
+}
+
+/* Subtle active underline */
+header nav a.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0.2rem;
+  left: 10%;
+  width: 80%;
+  height: 2px;
+  background: var(--brand);
+  border-radius: 1px;
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Search bar consistency */
+header .search input {
+  color: var(--text);
+}
+header .search input::placeholder {
+  color: var(--text-tertiary);
+  opacity: 0.8;
+}
+
+/* Improve kbd buttons in header */
+header .kbd {
+  padding: 0.4rem 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+header .kbd:hover {
+  background: var(--brand-light);
+  color: var(--brand);
+  border-color: var(--brand);
+  transform: translateY(-1px);
+}
+
+/* Dark mode glass fix */
+html.dark header {
+  background: rgba(30, 41, 59, 0.75);
+  border-color: rgba(51, 65, 85, 0.8);
+}
+
+/* Animation smoothing */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* ============================== */
+/* ✨ PREMIUM GLOW GRADIENT UNDERLINE */
+/* ============================== */
+
+header nav a.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0.15rem;
+  left: 15%;
+  width: 70%;
+  height: 2.5px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--brand1), var(--accent), var(--brand1));
+  background-size: 200% 100%;
+  animation: glowFlow 2.5s linear infinite;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.35);
+}
+
+@keyframes glowFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Optional: small glowing pulse behind active nav text */
+header nav a.active {
+  position: relative;
+  color: var(--brand);
+  text-shadow: 0 0 6px rgba(59,130,246,0.35);
+}
+
+html.dark header nav a.active {
+  text-shadow: 0 0 10px rgba(96,165,250,0.45);
+}
+header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    rgba(255,255,255,0.05),
+    rgba(255,255,255,0.15) 30%,
+    transparent 60%
+  );
+  opacity: 0.3;
+  pointer-events: none;
+  mask-image: radial-gradient(ellipse at 50% 0%, white, transparent 70%);
+}
+/* =======================================
+   SMARTDOC – NAVBAR SPACING REFINEMENT
+   ======================================= */
+header .mx-auto {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+header .mx-auto > .flex:first-child {
+  flex-shrink: 0;
+  min-width: 190px; /* prevent overlap with Upload menu */
+}
+
+header nav a {
+  position: relative;
+  overflow: hidden;
+}
+
+header nav a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0%;
+  height: 2px;
+  background: var(--brand1);
+  transition: all 0.25s ease;
+  transform: translateX(-50%);
+  border-radius: 4px;
+}
+
+header nav a:hover::after,
+header nav a.active::after {
+  width: 80%;
+}
+/* =======================================
+   SMARTDOC NAVBAR PREMIUM GLOW EFFECT
+   ======================================= */
+
+/* 🔹 Icon + text subtle glow on hover */
+header nav a {
+  position: relative;
+  overflow: hidden;
+  transition: color 0.25s ease, background 0.25s ease;
+}
+
+header nav a:hover {
+  color: var(--brand1);
+  background: rgba(59, 130, 246, 0.05);
+  box-shadow: inset 0 0 12px rgba(59, 130, 246, 0.08),
+              0 0 8px rgba(59, 130, 246, 0.12);
+  transform: translateY(-1px);
+}
+
+/* 🔹 Animated underline glow */
+header nav a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--brand1), var(--brand2));
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+  border-radius: 4px;
+  opacity: 0;
+}
+
+header nav a:hover::after,
+header nav a.active::after {
+  width: 80%;
+  opacity: 1;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+}
+
+/* 🔹 Smooth color pulse when active */
+header nav a.active {
+  color: var(--brand1);
+  font-weight: 600;
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: inset 0 0 8px rgba(59, 130, 246, 0.12);
+}
+
+/* 🔹 Dark mode refinement */
+html.dark header nav a:hover {
+  background: rgba(59, 130, 246, 0.12);
+  box-shadow: inset 0 0 12px rgba(59, 130, 246, 0.15),
+              0 0 8px rgba(59, 130, 246, 0.25);
+}
+
+html.dark header nav a::after {
+  background: linear-gradient(90deg, #60a5fa, #06b6d4);
+}
+.empty-state-icon {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+
