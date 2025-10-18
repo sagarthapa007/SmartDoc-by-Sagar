@@ -3,20 +3,15 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-"scripts": {
-  "prebuild": "chmod +x ./node_modules/.bin/vite || echo 'Skip chmod on Windows/Vercel'",
-  "build": "npx vite build",
-  "dev": "vite",
-  "preview": "vite preview"
-},
-"engines": {
-  "node": ">=18"
-}
-,
-"engines": {
-  "node": ">=18"
-}
-,
+  "scripts": {
+    "prebuild": "chmod +x ./node_modules/.bin/vite || echo 'Skip chmod on Windows/Vercel'",
+    "build": "node ./node_modules/vite/bin/vite.js build",
+    "dev": "vite",
+    "preview": "vite preview"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "classnames": "^2.5.1",
     "jspdf": "^2.5.2",
