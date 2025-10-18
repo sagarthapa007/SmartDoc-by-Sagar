@@ -4,10 +4,7 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true, // ✅ Always clears dist before building
-  },
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -18,27 +15,28 @@ export default defineConfig({
       "@utils": path.resolve(__dirname, "./src/utils"),
       "@modules": path.resolve(__dirname, "./src/modules"),
       "@charts": path.resolve(__dirname, "./src/charts"),
-      "@styles": path.resolve(__dirname, "./src/styles")
+      "@styles": path.resolve(__dirname, "./src/styles"),
     },
   },
 
-  // ✅ Fix react-window in production
+  // ✅ Ensures react-window is properly included in production
   optimizeDeps: {
     include: ["react-window"],
   },
 
   build: {
+    outDir: "dist",
+    emptyOutDir: true, // ✅ always clears dist before building
     commonjsOptions: {
       include: [/react-window/, /node_modules/],
     },
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks: undefined, // ✅ disables code splitting issues
       },
     },
+    chunkSizeWarningLimit: 1000, // optional: suppress size warning
   },
 
   server: {
-    port: 5174,
-  },
-});
+    port: 517
