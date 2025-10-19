@@ -1,49 +1,34 @@
-from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer
-from app.schemas import AnalyzeRequest, AnalyzeResponse
-from app.services.insight_engine import compute_insights
-from app.utils.io import read_dataframe, to_row_dicts
-from app.utils.summarizer import narrate
-from app.auth.routes import router as auth_router
-from app.auth.deps import get_current_user
+from app.routes import upload, detect, analyze, explore, intelligence
+from app.routes.actions import deduplicate, fill_missing, remove_outliers, export
 
-app = FastAPI(title="SmartDoc Backend", version="0.1.0")
+# Initialize app FIRST ✅
+app = FastAPI(title="SmartDoc G4+ API", version="0.3.0")
 
+# Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # tighten later (e.g., ["http://localhost:5174"])
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(auth_router)
+# Core feature routes
+app.include_router(upload.router, prefix="/api", tags=["upload"])
+app.include_router(detect.router, prefix="/api", tags=["detect"])
+app.include_router(analyze.router, prefix="/api", tags=["analyze"])
+app.include_router(explore.router, prefix="/api", tags=["explore"])
+app.include_router(intelligence.router, prefix="/api", tags=["intelligence"])
 
-@app.get("/health")
+# Action routes (data cleaning utilities)
+app.include_router(deduplicate.router, prefix="/api/actions", tags=["actions"])
+app.include_router(fill_missing.router, prefix="/api/actions", tags=["actions"])
+app.include_router(remove_outliers.router, prefix="/api/actions", tags=["actions"])
+app.include_router(export.router, prefix="/api/actions", tags=["actions"])
+
+# Health check
+@app.get("/api/health")
 def health():
-    return {"status": "ok"}
-
-@app.post("/analyze", response_model=AnalyzeResponse)
-def analyze_json(body: AnalyzeRequest, user: str = Depends(get_current_user)):
-    try:
-        result = compute_insights(body.rows, max_cells=body.options.max_cells)
-        return AnalyzeResponse(**result)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.post("/analyze/upload", response_model=AnalyzeResponse)
-async def analyze_upload(file: UploadFile = File(...), user: str = Depends(get_current_user)):
-    try:
-        content = await file.read()
-        df = read_dataframe(content, file.filename)
-        rows = to_row_dicts(df)
-        result = compute_insights(rows)
-        return AnalyzeResponse(**result)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to process file: {e}")
-
-@app.post("/narrate")
-def narrative(body: AnalyzeRequest, user: str = Depends(get_current_user)):
-    result = compute_insights(body.rows, max_cells=body.options.max_cells)
-    return {"narrative": narrate(result)}
+    return {"status": "ok", "version": "0.3.0"}

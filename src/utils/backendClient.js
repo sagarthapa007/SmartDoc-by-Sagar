@@ -1,12 +1,15 @@
 /**
- * 🌐 SmartDoc Backend Client
+ * 🌐 SmartDoc Backend Client (G4+ Unified)
  * Centralized API communication layer between React (frontend) and FastAPI (backend).
- * Handles: upload, analyze, narrate, auth, and future endpoints.
+ * Handles: upload, detect, analyze, explore, actions, narrate, auth, and offline fallbacks.
  */
 
 const API_BASE =
   import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "/api";
 
+/**
+ * Universal request wrapper with auth and JSON handling
+ */
 async function request(endpoint, method = "GET", data = null, auth = false) {
   const url = `${API_BASE}${endpoint}`;
   const headers = { "Content-Type": "application/json" };
@@ -31,32 +34,77 @@ async function request(endpoint, method = "GET", data = null, auth = false) {
   }
 }
 
+/* =========================================================
+   🔄 FILE UPLOAD & ANALYSIS
+   ========================================================= */
+
 /**
- * 🔄 Upload File
- * Sends structured file data (parsed from ingest.js) to backend.
+ * 📤 Upload File
+ * Sends structured file data (parsed from ingest.js or upload component) to backend.
  */
 export async function uploadFile(filePayload) {
   return request("/upload", "POST", filePayload);
 }
 
 /**
- * 📊 Analyze Data
- * Sends JSON-structured table data to backend for statistical analysis.
+ * 🧭 Detect Data Type (Auto Context)
+ * Determines dataset type and suggests relevant analyses.
  */
-export async function analyzeData(data) {
-  return request("/analyze", "POST", data);
+export async function detectData(dataset) {
+  return request("/detect", "POST", {
+    headers: dataset.headers,
+    sample_rows: dataset.rows?.slice(0, 100) || [],
+    text_blocks: dataset.text_blocks || [],
+  });
 }
 
 /**
- * 🧠 Generate Narrative Summary
+ * 📊 Analyze Data (Persona + Domain aware)
+ * Sends dataset with context to backend for statistical analysis.
+ */
+export async function analyzeData(data, context = { persona: "manager", data_type: "generic_dataset" }) {
+  return request("/analyze", "POST", {
+    headers: data.headers,
+    rows: data.rows || [],
+    text_blocks: data.text_blocks || [],
+    context,
+  });
+}
+
+/**
+ * 🧠 Generate Narrative Summary (Legacy / Optional)
  */
 export async function generateNarrative(data) {
   return request("/narrate", "POST", data);
 }
 
+/* =========================================================
+   ⚙️ ACTIONABLE OPERATIONS
+   ========================================================= */
+
 /**
- * 👤 Auth Operations
+ * 🧩 Perform Backend Actions (deduplicate, fill_missing, remove_outliers, export)
  */
+export async function performAction(action, payload) {
+  return request(`/actions/${action}`, "POST", payload);
+}
+
+/* =========================================================
+   🔍 EXPLORE API (No-SQL Query Builder)
+   ========================================================= */
+
+/**
+ * 🔍 Explore Query
+ * Allows filters, group_by, aggregates, and returns SQL equivalent.
+ */
+export async function exploreQuery(dataset_id, query) {
+  return request("/explore", "POST", { dataset_id, query });
+}
+
+/* =========================================================
+   👤 AUTHENTICATION
+   ========================================================= */
+
 export async function login(credentials) {
   return request("/auth/login", "POST", credentials);
 }
@@ -69,17 +117,17 @@ export async function refreshToken() {
   return request("/auth/refresh", "POST", null, true);
 }
 
-/**
- * 🩺 Health Check
- */
+/* =========================================================
+   🩺 HEALTH CHECK
+   ========================================================= */
 export async function healthCheck() {
   return request("/health", "GET");
 }
 
-/**
- * 🚨 Offline Fallbacks
- * Used when backend is unreachable (e.g., dev mode or offline).
- */
+/* =========================================================
+   🚨 OFFLINE FALLBACKS
+   ========================================================= */
+
 export const offlineFallbacks = {
   analyzeLocally: async (data) => {
     console.warn("⚠️ Backend unreachable — using local analyzer.");
@@ -93,13 +141,27 @@ export const offlineFallbacks = {
   },
 };
 
+/* =========================================================
+   📦 DEFAULT EXPORT
+   ========================================================= */
+
 export default {
   uploadFile,
+  detectData,
   analyzeData,
   generateNarrative,
+  performAction,
+  exploreQuery,
   login,
   register,
   refreshToken,
   healthCheck,
   offlineFallbacks,
 };
+/**-------------------------Frontend for Chart Suggestions  */
+export async function suggestCharts(payload) {
+  return request("/intelligence/suggest_charts", "POST", payload);
+}
+export async function explainQuestion(payload) {
+  return request("/intelligence/explain", "POST", payload);
+}

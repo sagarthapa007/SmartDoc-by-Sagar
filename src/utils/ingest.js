@@ -11,7 +11,7 @@ function detectHeaderRow(lines, options = {}) {
 
   for (let i = 0; i < maxCheck; i++) {
     const line = lines[i];
-    if (!line || line.trim().length === 0) continue;
+    if (!line?.trim()) continue;
 
     const fields = line.split(/[,\t|;]/).map(f => f.trim());
     let score = 0;
@@ -22,7 +22,7 @@ function detectHeaderRow(lines, options = {}) {
 
     // Heuristic 2: Capitalization patterns
     const capitalized = fields.filter(f => 
-      f && f.length > 0 && /^[A-Z]/.test(f)
+      f && /^[A-Z]/.test(f)
     ).length;
     score += (capitalized / fields.length) * 20;
 
@@ -36,7 +36,8 @@ function detectHeaderRow(lines, options = {}) {
     score += (unique / fields.length) * 15;
 
     // Heuristic 5: Reasonable length (not too short, not too long)
-    const avgLength = fields.filter(Boolean).reduce((sum, f) => sum + f.length, 0) / fields.length;
+    const validFields = fields.filter(Boolean);
+    const avgLength = validFields.reduce((sum, f) => sum + f.length, 0) / validFields.length;
     if (avgLength >= 3 && avgLength <= 50) score += 10;
 
     scores.push({ index: i, score, line, fields });
@@ -59,7 +60,7 @@ function detectHeaderRow(lines, options = {}) {
       .filter(s => s.index !== best.index && s.score >= 30)
       .sort((a, b) => b.score - a.score)
       .slice(0, 5),
-    lines: lines.slice(0, 10) // Include lines in detection result
+    lines: lines.slice(0, 10)
   };
 }
 
@@ -88,7 +89,6 @@ async function parseCSV(file, meta) {
 
     console.log('📊 CSV lines found:', lines.length);
 
-    // Auto detect header row with confidence
     const detection = detectHeaderRow(lines);
     console.log('🎯 CSV detection result:', detection);
 
@@ -129,7 +129,6 @@ async function parseExcel(file, meta) {
     const sheet = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheet];
     
-    // Get raw data to detect headers
     const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
     const lines = rawData.map(row => Array.isArray(row) ? row.join(",") : String(row));
     
@@ -140,9 +139,8 @@ async function parseExcel(file, meta) {
 
     const { headerIndex } = detection;
     
-    // Parse with detected header - SIMPLIFIED APPROACH
     const json = XLSX.utils.sheet_to_json(worksheet, { 
-      header: headerIndex, // Use header row index directly
+      header: headerIndex,
       defval: "" 
     });
 
@@ -206,14 +204,44 @@ async function parseText(file, meta) {
 async function parseDocx(file, meta) {
   try {
     const buffer = await file.arrayBuffer();
-    const { value } = await mammoth.extractRawText({ arrayBuffer: buffer });
-    const text = value.trim();
-    
-    console.log('✅ DOCX parsed - Text length:', text.length);
-    
-    return { kind: "doc", text, meta };
+
+    const { value: html } = await mammoth.convertToHtml({ arrayBuffer: buffer });
+    const div = document.createElement("div");
+    div.innerHTML = html;
+
+    const table = div.querySelector("table");
+
+    if (table) {
+      const rows = Array.from(table.querySelectorAll("tr")).map((tr) =>
+        Array.from(tr.querySelectorAll("td,th")).map((td) => td.textContent.trim())
+      );
+
+      let headers = rows.shift() || [];
+      const objects = rows.map((r) => {
+        const o = {};
+        headers.forEach((h, i) => (o[h || `col_${i + 1}`] = r[i] ?? ""));
+        return o;
+      });
+      headers = headers.map((h, i) => h || `col_${i + 1}`);
+
+      console.log(`📑 DOCX table detected with ${headers.length} columns and ${rows.length} rows`);
+
+      return {
+        kind: "table",
+        headers,
+        rows: objects,
+        headerIndex: 0,
+        detection: { headerIndex: 0, confidence: "medium", score: 65 },
+        meta: { ...meta, source: "docx", mode: "table" },
+      };
+    }
+
+    const { value: text } = await mammoth.extractRawText({ arrayBuffer: buffer });
+    console.log(`📝 DOCX text extracted — ${text.length} characters`);
+    return { kind: "doc", text, meta: { ...meta, source: "docx", mode: "text" } };
+
   } catch (error) {
-    console.error('❌ DOCX parse error:', error);
+    console.error("❌ DOCX parse error:", error);
     throw error;
   }
 }
@@ -225,11 +253,9 @@ export async function reparseWithHeader(file, newHeaderIndex) {
   const result = await ingestFile(file);
   if (result.kind !== "table") return result;
   
-  // Update the detection info
   result.headerIndex = newHeaderIndex;
   result.detection.headerIndex = newHeaderIndex;
   
-  // Re-parse based on file type
   const name = file.name.toLowerCase();
   if (name.endsWith(".csv")) {
     const text = await file.text();

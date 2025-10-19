@@ -1,0 +1,278 @@
+[
+  [
+    "employee name, department, designation, salary, join date",
+    "hr"
+  ],
+  [
+    "emp_id, attendance, leave balance, bonus, payroll",
+    "hr"
+  ],
+  [
+    "department, employee, hire date, position",
+    "hr"
+  ],
+  [
+    "performance, rating, manager, team, promotion",
+    "hr"
+  ],
+  [
+    "recruitment, candidate, interview, offer, onboarding",
+    "hr"
+  ],
+  [
+    "training, skill, certification, development, career",
+    "hr"
+  ],
+  [
+    "benefits, insurance, retirement, vacation, sick",
+    "hr"
+  ],
+  [
+    "customer, order_id, revenue, amount, region, date",
+    "sales"
+  ],
+  [
+    "invoice, product, sales, target, achieved, profit",
+    "sales"
+  ],
+  [
+    "client, amount, total sales, category, margin",
+    "sales"
+  ],
+  [
+    "territory, quota, commission, pipeline, opportunity",
+    "sales"
+  ],
+  [
+    "deal, stage, probability, forecast, close_date",
+    "sales"
+  ],
+  [
+    "retention, churn, loyalty, satisfaction, feedback",
+    "sales"
+  ],
+  [
+    "channel, partner, distributor, reseller, affiliate",
+    "sales"
+  ],
+  [
+    "invoice_no, account, balance, credit, debit, ledger",
+    "finance"
+  ],
+  [
+    "expense, asset, liability, income, tax, gst, vat",
+    "finance"
+  ],
+  [
+    "loan_id, principal, interest, emi, bank, payment",
+    "finance"
+  ],
+  [
+    "budget, forecast, cashflow, revenue, expenditure",
+    "finance"
+  ],
+  [
+    "investment, portfolio, stock, bond, dividend, yield",
+    "finance"
+  ],
+  [
+    "audit, compliance, regulation, reporting, standard",
+    "finance"
+  ],
+  [
+    "currency, exchange, rate, foreign, transaction",
+    "finance"
+  ],
+  [
+    "date, category, expense, note, amount, payment_mode",
+    "personal_expense"
+  ],
+  [
+    "fuel, groceries, utilities, rent, entertainment, total",
+    "personal_expense"
+  ],
+  [
+    "budget, savings, investment, income, spending, limit",
+    "personal_expense"
+  ],
+  [
+    "subscription, membership, fee, renewal, automatic",
+    "personal_expense"
+  ],
+  [
+    "travel, transportation, accommodation, food, shopping",
+    "personal_expense"
+  ],
+  [
+    "office, policy, vendor, contract, compliance, approval",
+    "admin"
+  ],
+  [
+    "asset_id, procurement, maintenance, vendor, status",
+    "admin"
+  ],
+  [
+    "facility, location, building, floor, room, capacity",
+    "admin"
+  ],
+  [
+    "document, record, archive, retention, disposal",
+    "admin"
+  ],
+  [
+    "meeting, agenda, minutes, action, followup",
+    "admin"
+  ],
+  [
+    "supplier, po_number, item, quantity, cost, delivery",
+    "procurement"
+  ],
+  [
+    "vendor, purchase_order, invoice, payment, approval",
+    "procurement"
+  ],
+  [
+    "rfq, quotation, bid, tender, evaluation, award",
+    "procurement"
+  ],
+  [
+    "inventory, stock, reorder, level, warehouse, storage",
+    "procurement"
+  ],
+  [
+    "contract, terms, conditions, renewal, termination",
+    "procurement"
+  ],
+  [
+    "campaign, impressions, clicks, cpc, budget, reach",
+    "marketing"
+  ],
+  [
+    "lead, conversion, ad_spend, roi, audience, platform",
+    "marketing"
+  ],
+  [
+    "segment, demographic, geographic, behavior, psychographic",
+    "marketing"
+  ],
+  [
+    "brand, awareness, perception, positioning, equity",
+    "marketing"
+  ],
+  [
+    "social, media, engagement, share, like, comment",
+    "marketing"
+  ],
+  [
+    "user, device, software, issue, ticket, resolution",
+    "it"
+  ],
+  [
+    "server, uptime, ip, status, alert, network",
+    "it"
+  ],
+  [
+    "security, firewall, antivirus, malware, breach",
+    "it"
+  ],
+  [
+    "backup, recovery, disaster, backup, restore",
+    "it"
+  ],
+  [
+    "license, subscription, renewal, compliance, audit",
+    "it"
+  ],
+  [
+    "machine, shift, operator, output, downtime, maintenance",
+    "factory"
+  ],
+  [
+    "batch, line, yield, defect, supervisor",
+    "factory"
+  ],
+  [
+    "quality, inspection, defect, rejection, acceptance",
+    "factory"
+  ],
+  [
+    "safety, incident, hazard, precaution, training",
+    "factory"
+  ],
+  [
+    "efficiency, utilization, capacity, throughput, bottleneck",
+    "factory"
+  ],
+  [
+    "production, raw_material, process, qc, wastage, batch",
+    "manufacturing"
+  ],
+  [
+    "assembly, part_no, defect, inspection, completion",
+    "manufacturing"
+  ],
+  [
+    "bom, component, subassembly, routing, operation",
+    "manufacturing"
+  ],
+  [
+    "schedule, plan, forecast, capacity, constraint",
+    "manufacturing"
+  ],
+  [
+    "supply, chain, logistics, distribution, delivery",
+    "manufacturing"
+  ],
+  [
+    "habit, goal, workout, sleep, mood, energy",
+    "personal_life"
+  ],
+  [
+    "task, reflection, emotion, gratitude, journal",
+    "personal_life"
+  ],
+  [
+    "health, fitness, nutrition, exercise, weight",
+    "personal_life"
+  ],
+  [
+    "learning, course, skill, progress, achievement",
+    "personal_life"
+  ],
+  [
+    "relationship, family, friend, contact, event",
+    "personal_life"
+  ],
+  [
+    "patient, diagnosis, treatment, medication, hospital",
+    "healthcare"
+  ],
+  [
+    "appointment, doctor, specialist, prescription, test",
+    "healthcare"
+  ],
+  [
+    "student, grade, course, attendance, performance",
+    "education"
+  ],
+  [
+    "teacher, subject, classroom, assignment, exam",
+    "education"
+  ],
+  [
+    "product, sku, price, inventory, category, review",
+    "ecommerce"
+  ],
+  [
+    "order, shipping, delivery, tracking, return",
+    "ecommerce"
+  ],
+  [
+    "property, address, price, area, bedrooms, bathrooms",
+    "real_estate"
+  ],
+  [
+    "lease, rent, tenant, landlord, contract, deposit",
+    "real_estate"
+  ]
+]

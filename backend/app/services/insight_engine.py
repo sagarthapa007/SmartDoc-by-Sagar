@@ -1,121 +1,111 @@
-import math
-def looks_like_date_header(h): return any(k in str(h or '').lower() for k in ['date','day','time','timestamp','created','modified','month','year'])
-def detect_column_type(values, header):
-  nums=dates=total=0
-  for v in values:
-    if v in (None,''): continue
-    total+=1
+
+from typing import List, Dict, Any, Optional
+import math, statistics
+
+def try_float(v):
     try:
-      n=float(str(v).replace(',',''))
-      if math.isfinite(n): nums+=1; continue
-    except: pass
-    if looks_like_date_header(header): dates+=1
-  if total==0: return 'category'
-  if nums/total>0.7: return 'number'
-  if dates/total>0.7: return 'date'
-  return 'category'
-def summarize_numeric(values):
-  vals=[]
-  for v in values:
-    if v in (None,''): continue
-    try:
-      n=float(v)
-      if math.isfinite(n): vals.append(n)
-    except: pass
-  n=len(vals)
-  if not n: return dict(n=0,mean=None,std=None,min=None,max=None,q1=None,q3=None,iqr=None)
-  vals.sort()
-  mean=sum(vals)/n
-  variance=sum((x-mean)**2 for x in vals)/n
-  std=math.sqrt(variance)
-  def q(p):
-    if n==1: return vals[0]
-    idx=(n-1)*p
-    lo=math.floor(idx); hi=math.ceil(idx)
-    return vals[lo] if lo==hi else vals[lo]+(vals[hi]-vals[lo])*(idx-lo)
-  q1,q3=q(0.25),q(0.75)
-  return dict(n=n,mean=mean,std=std,min=vals[0],max=vals[-1],q1=q1,q3=q3,iqr=q3-q1)
-def pearson(x_raw,y_raw):
-  x=[]; y=[]
-  for a,b in zip(x_raw,y_raw):
-    if a in (None,'') or b in (None,''): continue
-    try:
-      na=float(a); nb=float(b)
-      if math.isfinite(na) and math.isfinite(nb): x.append(na); y.append(nb)
-    except: pass
-  n=len(x)
-  if n<3: return None
-  mx=sum(x)/n; my=sum(y)/n
-  num=sum((xi-mx)*(yi-my) for xi,yi in zip(x,y))
-  dx=sum((xi-mx)**2 for xi in x); dy=sum((yi-my)**2 for yi in y)
-  den=math.sqrt(dx*dy)
-  if den==0: return None
-  return num/den
-def top_n(lst,n,key): return sorted(lst,key=key,reverse=True)[:n]
-def value_counts(values):
-  out={}
-  for v in values:
-    key='__MISSING__' if v in (None,'') else str(v)
-    out[key]=out.get(key,0)+1
-  return out
-def compute_insights(rows,max_cells=200000):
-  if not rows:
-    return dict(summary=dict(rows=0,columns=0,numericColumns=0,categoricalColumns=0,dateColumns=0),schema=[],numericStats=[],categoricalStats=[],correlations=[],insights=[])
-  headers=list(rows[0].keys())
-  cols=[[r.get(h,'') for r in rows] for h in headers]
-  cell_count=len(rows)*len(headers)
-  if cell_count>max_cells:
-    step=math.ceil(cell_count/max_cells)
-    cols=[[v for i,v in enumerate(col) if i%step==0] for col in cols]
-  schema=[]
-  for h,values in zip(headers,cols):
-    ctype=detect_column_type(values,h)
-    missing=sum(1 for v in values if v in (None,''))
-    schema.append(dict(header=h,type=ctype,missing=missing,missingPct=missing/max(1,len(values)),sampleSize=len(values)))
-  numeric_stats=[]
-  for col in schema:
-    if col['type']!='number': continue
-    values=cols[headers.index(col['header'])]
-    stats=summarize_numeric(values)
-    outliers=0
-    if stats['n']>0 and stats['iqr'] is not None:
-      lo=stats['q1']-1.5*stats['iqr']; hi=stats['q3']+1.5*stats['iqr']
-      for v in values:
-        try:
-          n=float(v)
-          if math.isfinite(n) and (n<lo or n>hi): outliers+=1
-        except: pass
-    stats.update(dict(column=col['header'],outliers=outliers))
-    numeric_stats.append(stats)
-  categorical_stats=[]
-  for col in schema:
-    if col['type']!='category': continue
-    values=cols[headers.index(col['header'])]
-    counts=value_counts(values); total=len(values)
-    pairs=[(k,v) for k,v in counts.items() if k!='__MISSING__']; pairs.sort(key=lambda kv:kv[1],reverse=True)
-    top5=pairs[:5]; dominant=(top5[0][1]/total) if top5 else 0
-    categorical_stats.append(dict(column=col['header'],total=total,uniques=len(counts),dominant=dominant,top5=[dict(value=k,count=v,pct=v/total) for k,v in top5]))
-  num_cols=[c['header'] for c in schema if c['type']=='number']
-  corrs=[]
-  for i in range(len(num_cols)):
-    for j in range(i+1,len(num_cols)):
-      A=cols[headers.index(num_cols[i])]; B=cols[headers.index(num_cols[j])]
-      r=pearson(A,B)
-      if r is not None: corrs.append(dict(a=num_cols[i],b=num_cols[j],r=float(r),strength=abs(r)))
-  corrs=top_n(corrs,10,key=lambda x:abs(x['r']))
-  insights=[]
-  for c in schema:
-    if c['missingPct']>=0.2:
-      insights.append(dict(id=f"missing-{c['header']}",type='missing',severity='high' if c['missingPct']>=0.5 else 'medium',title=f'High missing values in “{c["header"]}”',detail=f"{c['missingPct']*100:.1f}% of rows missing"))
-  for s in numeric_stats:
-    if s['n']>0 and s['outliers']>0:
-      sev='high' if (s['outliers']/max(1,s['n']))>0.05 else 'low'
-      insights.append(dict(id=f"outliers-{s['column']}",type='outlier',severity=sev,title=f'Outliers in “{s["column"]}”',detail=f"{s['outliers']} outliers detected via IQR"))
-  for s in categorical_stats:
-    if s['uniques']>1 and s['dominant']>=0.8:
-      insights.append(dict(id=f"imbalance-{s['column']}",type='imbalance',severity='medium',title=f'Imbalanced categories in “{s["column"]}”',detail=f"Top category holds {s['dominant']*100:.1f}% share"))
-  for c in corrs:
-    if abs(c['r'])>=0.7:
-      insights.append(dict(id=f"corr-{c['a']}-{c['b']}",type='correlation',severity='high' if abs(c['r'])>=0.9 else 'medium',title=f"Strong correlation ({c['r']:.2f})",detail=f"“{c['a']}” vs “{c['b']}”"))
-  summary=dict(rows=len(rows),columns=len(headers),numericColumns=len(num_cols),categoricalColumns=sum(1 for s in schema if s['type']=='category'),dateColumns=sum(1 for s in schema if s['type']=='date'))
-  return dict(summary=summary,schema=schema,numericStats=numeric_stats,categoricalStats=categorical_stats,correlations=corrs,insights=insights)
+        return float(v)
+    except Exception:
+        return None
+
+class InsightEngine:
+    def run(self, headers: List[str], rows: List[Dict[str, Any]], text_blocks: Optional[List[str]], context: Dict[str, Any]) -> Dict[str, Any]:
+        persona = context.get("persona","manager")
+        data_type = context.get("data_type","generic_dataset")
+
+        # Compute simple quality metrics
+        row_count = len(rows)
+        col_count = len(headers or [])
+        missing_cells = 0
+        for r in rows:
+            for h in headers or []:
+                if r.get(h) in (None, "", "NaN"):
+                    missing_cells += 1
+        total_cells = max(row_count * max(col_count,1), 1)
+        missing_pct = round(missing_cells / total_cells * 100, 2)
+
+        # numeric distribution (pick first numeric column if any)
+        numeric_cols = [h for h in headers or [] if any(try_float(r.get(h)) is not None for r in rows)]
+        primary = numeric_cols[0] if numeric_cols else None
+        values = [try_float(r.get(primary)) for r in rows] if primary else []
+        values = [v for v in values if v is not None]
+        summary_num = {}
+        if values:
+            summary_num = {
+                "mean": round(statistics.mean(values), 3),
+                "min": min(values),
+                "max": max(values),
+                "count": len(values)
+            }
+
+        quick_actions = []
+        if missing_pct > 5:
+            quick_actions.append({
+                "id": "fill_missing",
+                "title": f"Fill missing values ({missing_pct}%)",
+                "severity": "medium",
+                "action_url": "/api/actions/fill_missing",
+                "preview": "Impute numeric with median, text with mode"
+            })
+        # very naive duplicate check by email / customer
+        key = None
+        if "email" in [h.lower() for h in (headers or [])]:
+            key = next((h for h in headers if h.lower()=="email"), None)
+        elif "customer" in [h.lower() for h in (headers or [])]:
+            key = next((h for h in headers if h.lower()=="customer"), None)
+        if key:
+            seen, dups = set(), 0
+            for r in rows:
+                k = r.get(key)
+                if k in seen:
+                    dups += 1
+                else:
+                    seen.add(k)
+            if dups:
+                quick_actions.append({
+                    "id": "fix_duplicates",
+                    "title": f"Fix {dups} duplicate {key} records",
+                    "severity": "high",
+                    "action_url": "/api/actions/deduplicate",
+                    "preview": f"Will merge records with same {key}"
+                })
+
+        # Persona-specific narratives
+        if persona == "executive":
+            insights = {
+                "critical": [{"text": f"{missing_pct}% of data missing. Ensure pipeline reliability."}],
+                "opportunities": [{"text": f"Primary metric '{primary}' mean is {summary_num.get('mean') if summary_num else 'n/a'}."}]
+            }
+        elif persona == "manager":
+            insights = {
+                "critical": [{"text": f"Track data completeness ({missing_pct}%)."}],
+                "opportunities": [{"text": "Use Explore to find high-value segments."}]
+            }
+        else:
+            insights = {
+                "critical": [{"text": "Run quality checks and remove outliers."}],
+                "opportunities": [{"text": "Start with duplicates and missing fixes."}]
+            }
+
+        result = {
+            "for_persona": persona,
+            "quick_actions": quick_actions,
+            "insights": insights,
+            "charts": {
+                "primary": {
+                    "type": "summary",
+                    "metric": primary,
+                    "numeric_summary": summary_num
+                }
+            },
+            "summary": f"Analyzed {row_count} rows, {col_count} columns (missing {missing_pct}%).",
+            "quality": {"missing_pct": missing_pct, "row_count": row_count, "col_count": col_count},
+            "technical": {"numeric": summary_num},
+            "business": {"data_type": data_type},
+            "narrative": {
+                "technical": {"summary": {"rowCount": row_count, "colCount": col_count}},
+                "business": {"context": {"dataType": data_type}},
+                "quality": {"missingPct": missing_pct}
+            }
+        }
+        return result

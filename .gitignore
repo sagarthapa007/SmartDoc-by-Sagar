@@ -3,41 +3,42 @@
 # Covers: Frontend (Vite/React) + Backend (FastAPI)
 # =====================================================
 
-# === Node / Vite Frontend ===
+# === 📦 Node / Vite Frontend ===
 node_modules/
 dist/
 build/
+.vite/
 .cache/
 .tmp/
 *.local
 .vercel/
 .vscode/
+coverage/
+*.lock
 
-# === Environment & Config Files ===
+# === ⚙️ Environment & Config Files ===
 .env
 .env.*
 .env.local
 .env.development
 .env.production
-.vite/
-.DS_Store
-Thumbs.db
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+.env.test
+*.envrc
+*.secret
+*.config
+*.bak
+*.tmp
 
-# === Python / FastAPI Backend ===
+# === 🧠 Python / FastAPI Backend ===
+backend/.venv/
+backend/venv/
+backend/env/
 backend/__pycache__/
 backend/.pytest_cache/
 backend/.mypy_cache/
 backend/.ruff_cache/
 backend/.idea/
 backend/.vscode/
-backend/.venv/
-backend/venv/
-backend/env/
 backend/*.pyc
 backend/*.pyo
 backend/*.pyd
@@ -46,29 +47,63 @@ backend/*.sqlite3
 backend/.env
 backend/.env.*
 
-# === Build & Packaging Artifacts ===
+# === 🧠 ML & Cache Files ===
+backend/app/ml/data_type_model.pkl
+backend/app/ml/model_cache.pkl
+backend/app/cache/
+backend/app/__pycache__/
+backend/app/ml/__pycache__/
+backend/app/intelligence/__pycache__/
+backend/app/routes/__pycache__/
+
+# === 🧰 Build & Packaging Artifacts ===
 *.egg-info/
 *.spec
-*.lock
-*.bak
-*.tmp
-__pycache__/
 *.tar
 *.gz
 *.zip
+*.whl
+pip-wheel-metadata/
+__pycache__/
 
-# === OS Files ===
-desktop.ini
+# === 🪟 OS & System Files ===
 .DS_Store
 Thumbs.db
+desktop.ini
+ehthumbs.db
+Icon?
+.trash-*
 
-# === Logs & Cache ===
+# === 🧾 Logs & Runtime ===
 logs/
 *.log
 *.pid
 *.seed
 *.out
+nohup.out
+celerybeat-schedule
 
-# === Coverage / Test ===
+# === 🧪 Coverage / Test ===
 coverage/
+htmlcov/
 .pytest_cache/
+.tox/
+.nox/
+.mypy_cache/
+.pyre/
+pytestdebug.log
+.pytype/
+
+# === 🧱 IDEs & Misc Tools ===
+.idea/
+.vscode/
+.history/
+.sublime-project
+.sublime-workspace
+
+# === 🗂️ Temporary or local assets ===
+backend/test_*.json
+samples/
+temp/
+tmp/
+drafts/

@@ -1,117 +1,27 @@
-import React, { Suspense } from "react";
+import React from "react";
 
-// Dynamically import react-window with no SSR
-const FixedSizeList = React.lazy(() => 
-  import("react-window").then(mod => ({ default: mod.FixedSizeList }))
-);
-
-export default function PreviewTable({ headers = [], rows = [] }) {
-  const height = 260;
-  const rowHeight = 32;
-  const displayRows = rows.slice(0, 200);
-  const columnWidth = 150;
-  const totalWidth = headers.length * columnWidth;
-
-  if (!headers.length || !rows.length) {
-    return (
-      <div className="card text-center p-6">
-        <h3 className="font-semibold mb-2">No Data Loaded</h3>
-        <p className="text-sm opacity-70">
-          Upload a dataset to see a live preview here.
-        </p>
-      </div>
-    );
-  }
-
+export default function PreviewTable({ headers = [], rows = [], maxHeight = "400px" }) {
   return (
-    <div className="card">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold">Preview</h3>
-        <span className="badge">{rows.length.toLocaleString()} rows</span>
-      </div>
-
-      {/* Table Container */}
-      <div
-        style={{
-          overflow: "auto",
-          border: "1px solid var(--border)",
-          borderRadius: 12,
-          maxHeight: height + rowHeight + 2,
-        }}
-      >
-        <div style={{ minWidth: totalWidth }}>
-          {/* Sticky Header */}
-          <div
-            style={{
-              position: "sticky",
-              top: 0,
-              background: "var(--card)",
-              zIndex: 1,
-              display: "grid",
-              gridTemplateColumns: `repeat(${headers.length}, ${columnWidth}px)`,
-              borderBottom: "1px solid var(--border)",
-            }}
-          >
-            {headers.map((h, i) => (
-              <div
-                key={i}
-                style={{
-                  textAlign: "left",
-                  padding: "8px 10px",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  opacity: 0.8,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {h}
-              </div>
+    <div className="border border-[var(--border)] rounded-lg overflow-hidden">
+      <div className="overflow-auto" style={{ maxHeight: "70vh" }}>
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 bg-[var(--surface)] z-10">
+            <tr>
+              {headers.map((h) => (
+                <th key={h} className="text-left px-3 py-2 border-b border-[var(--border)] whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, idx) => (
+              <tr key={idx} className="odd:bg-[var(--muted)]/20">
+                {headers.map((h) => (
+                  <td key={h} className="px-3 py-2 border-b border-[var(--border)]">{String(r?.[h] ?? "")}</td>
+                ))}
+              </tr>
             ))}
-          </div>
-
-          {/* Virtualized Rows with Suspense */}
-          <Suspense fallback={<div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading preview...</div>}>
-            <FixedSizeList
-              height={height}
-              itemCount={displayRows.length}
-              itemSize={rowHeight}
-              width={totalWidth}
-            >
-              {({ index, style }) => {
-                const row = displayRows[index];
-                return (
-                  <div
-                    style={{
-                      ...style,
-                      display: "grid",
-                      gridTemplateColumns: `repeat(${headers.length}, ${columnWidth}px)`,
-                      borderBottom: "1px solid var(--border)",
-                      alignItems: "center",
-                      fontSize: 13,
-                    }}
-                  >
-                    {headers.map((h, j) => (
-                      <div
-                        key={j}
-                        style={{
-                          padding: "0 10px",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {String(row[h] ?? "")}
-                      </div>
-                    ))}
-                  </div>
-                );
-              }}
-            </FixedSizeList>
-          </Suspense>
-        </div>
+          </tbody>
+        </table>
       </div>
     </div>
   );

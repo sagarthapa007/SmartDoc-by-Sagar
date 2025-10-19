@@ -3,21 +3,17 @@ import Header from "@components/layout/Header.jsx";
 import Container from "@components/layout/Container.jsx";
 
 import UIProvider from "@context/UIContext.jsx";
-import { SessionProvider, useSession } from "@context/SessionContext.jsx";
+import { SessionProvider } from "@context/SessionContext.jsx";
 import { ExportProvider } from "@context/ExportContext.jsx";
 import { ReportProvider } from "@context/ReportContext.jsx";
 import { HistoryProvider } from "@context/HistoryContext.jsx";
 
-// === Pages ===
-import Upload from "@pages/Upload.jsx";
-import Analyze from "@pages/Analyze.jsx";
-
 /**
- * ⚙️ Root SmartDoc App (Multi-Provider Wrapper)
+ * ⚙️ Root SmartDoc App (Global Provider Wrapper)
  * -------------------------------------------------
- * - Provides unified state across modules (Session, Export, Report, etc.)
- * - Maintains Dark/Light mode via UIContext
- * - Handles page routing dynamically via SessionContext (route, setRoute)
+ * - Wraps the entire app with unified global state contexts
+ * - Controls UI theme (dark/light) via UIProvider
+ * - Delegates routing to Container.jsx (which now includes Home, Upload, etc.)
  * -------------------------------------------------
  */
 export default function App() {
@@ -37,22 +33,20 @@ export default function App() {
 }
 
 /**
- * 🎯 MainApp: Renders header + page routing
- * Uses `route` from SessionContext to switch views dynamically.
+ * 🎯 MainApp: Renders the app header and main router container
+ * ------------------------------------------------------------
+ * Uses React Router (Container.jsx) for all route-based navigation.
+ * Header stays persistent, ensuring consistent UI across all pages.
  */
 function MainApp() {
-  const { route } = useSession();
-
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--text)] flex flex-col">
       {/* 🔹 Global Header */}
       <Header />
 
-      {/* 🔹 Main Content Area */}
+      {/* 🔹 Dynamic Route Container (uses React Router) */}
       <main className="flex-1 overflow-hidden">
-        {route === "upload" && <Upload />}
-        {route === "analyze" && <Analyze />}
-        {route !== "upload" && route !== "analyze" && <Container />}
+        <Container />
       </main>
     </div>
   );
