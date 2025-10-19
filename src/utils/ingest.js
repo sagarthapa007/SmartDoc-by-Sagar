@@ -58,7 +58,8 @@ function detectHeaderRow(lines, options = {}) {
     alternatives: scores
       .filter(s => s.index !== best.index && s.score >= 30)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 5)
+      .slice(0, 5),
+    lines: lines.slice(0, 10) // Include lines in detection result
   };
 }
 
@@ -68,6 +69,8 @@ function detectHeaderRow(lines, options = {}) {
 export async function ingestFile(file) {
   const name = file.name.toLowerCase();
   const meta = { name: file.name, size: file.size, mime: file.type };
+
+  console.log('📂 Processing file:', file.name);
 
   if (name.endsWith(".csv")) return await parseCSV(file, meta);
   if (name.endsWith(".xlsx") || name.endsWith(".xls")) return await parseExcel(file, meta);
@@ -79,102 +82,140 @@ export async function ingestFile(file) {
 
 /* ---------- CSV ---------- */
 async function parseCSV(file, meta) {
-  const text = await file.text();
-  const lines = text.split(/\r?\n/).filter(Boolean);
+  try {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(Boolean);
 
-  // Auto detect header row with confidence
-  const detection = detectHeaderRow(lines);
-  const { headerIndex, confidence, score, alternatives } = detection;
-  
-  const sample = lines.slice(headerIndex).join("\n");
+    console.log('📊 CSV lines found:', lines.length);
 
-  const parsed = Papa.parse(sample, {
-    header: true,
-    skipEmptyLines: true,
-    dynamicTyping: true,
-    transformHeader: (h) => h.trim(),
-  });
+    // Auto detect header row with confidence
+    const detection = detectHeaderRow(lines);
+    console.log('🎯 CSV detection result:', detection);
 
-  const headers = parsed.meta.fields || [];
-  const rows = parsed.data || [];
-  
-  return { 
-    kind: "table", 
-    headers, 
-    rows, 
-    meta, 
-    headerIndex,
-    detection: { confidence, score, headerIndex, alternatives, lines: lines.slice(0, 10) }
-  };
+    const { headerIndex } = detection;
+    const sample = lines.slice(headerIndex).join("\n");
+
+    const parsed = Papa.parse(sample, {
+      header: true,
+      skipEmptyLines: true,
+      dynamicTyping: true,
+      transformHeader: (h) => h.trim(),
+    });
+
+    const headers = parsed.meta.fields || [];
+    const rows = parsed.data || [];
+
+    console.log('✅ CSV parsed - Headers:', headers.length, 'Rows:', rows.length);
+    
+    return { 
+      kind: "table", 
+      headers, 
+      rows, 
+      meta, 
+      headerIndex,
+      detection 
+    };
+  } catch (error) {
+    console.error('❌ CSV parse error:', error);
+    throw error;
+  }
 }
 
 /* ---------- EXCEL ---------- */
 async function parseExcel(file, meta) {
-  const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: "array" });
-  const sheet = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[sheet];
-  
-  // Get raw data to detect headers
-  const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-  const lines = rawData.map(row => row.join(","));
-  
-  const detection = detectHeaderRow(lines);
-  const { headerIndex, confidence, score, alternatives } = detection;
-  
-  // Parse with detected header
-  const range = XLSX.utils.decode_range(worksheet['!ref']);
-  range.s.r = headerIndex; // Start from detected header row
-  const json = XLSX.utils.sheet_to_json(worksheet, { 
-    range: range,
-    defval: "" 
-  });
+  try {
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: "array" });
+    const sheet = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheet];
+    
+    // Get raw data to detect headers
+    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+    const lines = rawData.map(row => Array.isArray(row) ? row.join(",") : String(row));
+    
+    console.log('📊 Excel lines found:', lines.length);
 
-  const headers = json.length ? Object.keys(json[0]) : [];
-  const rows = json;
-  
-  return { 
-    kind: "table", 
-    headers, 
-    rows, 
-    meta, 
-    headerIndex,
-    detection: { confidence, score, alternatives, lines: lines.slice(0, 10) }
-  };
+    const detection = detectHeaderRow(lines);
+    console.log('🎯 Excel detection result:', detection);
+
+    const { headerIndex } = detection;
+    
+    // Parse with detected header - SIMPLIFIED APPROACH
+    const json = XLSX.utils.sheet_to_json(worksheet, { 
+      header: headerIndex, // Use header row index directly
+      defval: "" 
+    });
+
+    const headers = json.length && json[0] ? Object.keys(json[0]) : [];
+    const rows = json.length > 1 ? json.slice(1) : [];
+
+    console.log('✅ Excel parsed - Headers:', headers.length, 'Rows:', rows.length);
+    
+    return { 
+      kind: "table", 
+      headers, 
+      rows, 
+      meta, 
+      headerIndex,
+      detection 
+    };
+  } catch (error) {
+    console.error('❌ Excel parse error:', error);
+    throw error;
+  }
 }
 
 /* ---------- TEXT ---------- */
 async function parseText(file, meta) {
-  const text = await file.text();
-  const lines = text.split(/\r?\n/).filter(Boolean);
-  
-  const detection = detectHeaderRow(lines);
-  const { headerIndex, confidence, score, alternatives } = detection;
-  
-  const headers = lines[headerIndex].split(/[,\t|;]/).map((h) => h.trim());
-  const rows = lines.slice(headerIndex + 1).map((line) => {
-    const values = line.split(/[,\t|;]/);
-    const obj = {};
-    headers.forEach((h, i) => (obj[h] = values[i]?.trim() || ""));
-    return obj;
-  });
-  
-  return { 
-    kind: "table", 
-    headers, 
-    rows, 
-    meta, 
-    headerIndex,
-    detection: { confidence, score, alternatives, lines: lines.slice(0, 10) }
-  };
+  try {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(Boolean);
+
+    console.log('📊 Text lines found:', lines.length);
+    
+    const detection = detectHeaderRow(lines);
+    console.log('🎯 Text detection result:', detection);
+
+    const { headerIndex } = detection;
+    
+    const headers = lines[headerIndex]?.split(/[,\t|;]/).map((h) => h.trim()) || [];
+    const rows = lines.slice(headerIndex + 1).map((line) => {
+      const values = line.split(/[,\t|;]/);
+      const obj = {};
+      headers.forEach((h, i) => (obj[h] = values[i]?.trim() || ""));
+      return obj;
+    }).filter(row => Object.values(row).some(val => val !== ""));
+    
+    console.log('✅ Text parsed - Headers:', headers.length, 'Rows:', rows.length);
+    
+    return { 
+      kind: "table", 
+      headers, 
+      rows, 
+      meta, 
+      headerIndex,
+      detection 
+    };
+  } catch (error) {
+    console.error('❌ Text parse error:', error);
+    throw error;
+  }
 }
 
 /* ---------- DOCX ---------- */
 async function parseDocx(file, meta) {
-  const buffer = await file.arrayBuffer();
-  const { value } = await mammoth.extractRawText({ arrayBuffer: buffer });
-  const text = value.trim();
-  return { kind: "doc", text, meta };
+  try {
+    const buffer = await file.arrayBuffer();
+    const { value } = await mammoth.extractRawText({ arrayBuffer: buffer });
+    const text = value.trim();
+    
+    console.log('✅ DOCX parsed - Text length:', text.length);
+    
+    return { kind: "doc", text, meta };
+  } catch (error) {
+    console.error('❌ DOCX parse error:', error);
+    throw error;
+  }
 }
 
 /**

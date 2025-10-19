@@ -1,5 +1,3 @@
-// Replace your entire UploaderPanel.jsx with this:
-
 import React, { useState } from "react";
 import { ingestFile } from "@utils/ingest";
 import { useSession } from "@context/SessionContext.jsx";
@@ -41,8 +39,18 @@ export default function UploaderPanel() {
       
       const result = await ingestFile(file);
       
-      // Always show detection banner, commit dataset to session
-      setSession((prev) => ({ ...prev, dataset: result }));
+      console.log('📦 Ingest result:', result);
+      
+      // Ensure detection object exists
+      if (!result.detection) {
+        console.warn('No detection object in result:', result);
+      }
+      
+      // Always commit dataset to session
+      setSession((prev) => ({ 
+        ...prev, 
+        dataset: result 
+      }));
       
     } catch (err) {
       console.error("❌ Upload failed:", err);
@@ -76,7 +84,8 @@ export default function UploaderPanel() {
         headerIndex: newIndex,
         detection: {
           ...session.dataset.detection,
-          headerIndex: newIndex
+          headerIndex: newIndex,
+          confidence: newIndex === 0 ? 'high' : 'medium' // Update confidence
         }
       };
       
@@ -90,11 +99,11 @@ export default function UploaderPanel() {
     }
   };
 
-  const handleDismiss = () => {
-    if (session?.dataset) {
-      const updatedDataset = { ...session.dataset, detection: null };
-      setSession((prev) => ({ ...prev, dataset: updatedDataset }));
-    }
+  const handleConfirmHeader = () => {
+    // Simply remove the detection banner while keeping the dataset
+    const updatedDataset = { ...session.dataset };
+    delete updatedDataset.detection; // Remove detection to hide banner
+    setSession((prev) => ({ ...prev, dataset: updatedDataset }));
   };
 
   const ds = session?.dataset;
@@ -120,37 +129,32 @@ export default function UploaderPanel() {
       )}
       {error && <p className="mt-2 text-sm text-red-500">⚠️ {error}</p>}
 
-      {/* 🧠 Smart header detection banner */}
-{ds?.detection && (
-  <>
-    {console.log('Detection:', ds.detection)}
-    {console.log('Headers:', ds.headers)}
-    {console.log('Lines:', ds.detection.lines)}
-    {console.log('HeaderIndex:', ds.detection.headerIndex)}
-    <HeaderConfirmBanner
-      detection={ds.detection}
-      headers={ds.headers}
-      onChangeHeader={handleChangeHeader}
-      onDismiss={handleDismiss}
-    />
-  </>
-)}
+      {/* 🧠 Smart header detection banner - FIXED CONDITION */}
+      {ds?.detection && (
+        <HeaderConfirmBanner
+          detection={ds.detection}
+          headers={ds.headers}
+          onChangeHeader={handleChangeHeader}
+          onDismiss={handleConfirmHeader} // Fixed function name
+        />
+      )}
+
+      {/* Debug info - remove in production */}
+      {process.env.NODE_ENV === 'development' && ds && (
+        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+          <strong>Debug:</strong> Dataset loaded - Headers: {ds.headers?.length}, Rows: {ds.rows?.length}, Detection: {ds.detection ? 'Yes' : 'No'}
+        </div>
+      )}
 
       {/* ⚠️ Confirmation Modal for re-upload */}
       {showConfirm && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={() => setShowConfirm(false)}
-        >
-          <div
-            className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-xl w-[400px] animate-fade-in"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-xl w-[400px] animate-fade-in">
             <h3 className="text-lg font-semibold mb-2 text-[var(--text)]">
               Replace existing dataset?
             </h3>
             <p className="text-sm opacity-80 mb-4">
-              Uploading a new file will <strong>replace your current dataset</strong> and clear the current preview/analysis.
+              Uploading a new file will replace your current dataset.
             </p>
 
             <div className="flex justify-end gap-3">
