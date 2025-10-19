@@ -4,6 +4,7 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -32,10 +33,19 @@ export default defineConfig({
     rollupOptions: {
       external: [], // no external packages are excluded
     },
-    chunkSizeWarningLimit: 1500, // optional - silence 500kB warnings
+    chunkSizeWarningLimit: 1500, // silence 500kB warnings
   },
 
   server: {
-    port: 5174,
+    port: 5174, // your dev port (keep it)
+    open: true,
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:8000", // FastAPI backend
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ""),
+      },
+    },
   },
 });

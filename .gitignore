@@ -1,23 +1,74 @@
-# === Node & Build Artifacts ===
+# =====================================================
+# 🚀 SMARTDOC ENTERPRISE - FULL PROJECT .gitignore
+# Covers: Frontend (Vite/React) + Backend (FastAPI)
+# =====================================================
+
+# === Node / Vite Frontend ===
 node_modules/
 dist/
 build/
 .cache/
 .tmp/
+*.local
+.vercel/
+.vscode/
 
-# === Environment & Config ===
+# === Environment & Config Files ===
 .env
+.env.*
 .env.local
 .env.development
 .env.production
-
-# === OS & Editor Files ===
-.vscode/
+.vite/
 .DS_Store
 Thumbs.db
-
-# === Logs ===
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# === Python / FastAPI Backend ===
+backend/__pycache__/
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.ruff_cache/
+backend/.idea/
+backend/.vscode/
+backend/.venv/
+backend/venv/
+backend/env/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/*.db
+backend/*.sqlite3
+backend/.env
+backend/.env.*
+
+# === Build & Packaging Artifacts ===
+*.egg-info/
+*.spec
+*.lock
+*.bak
+*.tmp
+__pycache__/
+*.tar
+*.gz
+*.zip
+
+# === OS Files ===
+desktop.ini
+.DS_Store
+Thumbs.db
+
+# === Logs & Cache ===
+logs/
+*.log
+*.pid
+*.seed
+*.out
+
+# === Coverage / Test ===
+coverage/
+.pytest_cache/

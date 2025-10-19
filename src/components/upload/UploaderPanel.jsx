@@ -3,8 +3,9 @@ import { ingestFile } from "@utils/ingest";
 import { useSession } from "@context/SessionContext.jsx";
 import HeaderConfirmBanner from "./HeaderConfirmBanner";
 import Papa from "papaparse";
+import { uploadFile, offlineFallbacks } from "@utils/backendClient.js";
 
-export default function UploaderPanel() {
+export default function UploaderPanel({ onFileProcessed }) {
   const { session, setSession } = useSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -28,33 +29,33 @@ export default function UploaderPanel() {
   async function processFile(file) {
     try {
       setSession((prev) => ({ ...prev, dataset: null }));
-      await new Promise((res) => setTimeout(res, 300));
+      await new Promise((res) => setTimeout(res, 200));
 
       setBusy(true);
       setError("");
-      
-      // Store original file text for re-parsing
       const text = await file.text();
       setOriginalFileText(text);
-      
-      const result = await ingestFile(file);
-      
-      console.log('📦 Ingest result:', result);
-      
-      // Ensure detection object exists
-      if (!result.detection) {
-        console.warn('No detection object in result:', result);
+
+      const localResult = await ingestFile(file);
+      console.log("📦 Local ingest result:", localResult);
+
+      // 🔗 Try sending dataset to backend
+      let backendRes = await uploadFile(localResult);
+
+      if (!backendRes?.success) {
+        console.warn("⚠️ Backend unavailable, using local dataset.");
+        backendRes = { data: localResult };
       }
-      
-      // Always commit dataset to session
-      setSession((prev) => ({ 
-        ...prev, 
-        dataset: result 
-      }));
-      
+
+      const dataset = backendRes.data || localResult;
+      setSession((prev) => ({ ...prev, dataset }));
+
+      // Optional callback to parent (Upload.jsx)
+      if (onFileProcessed) onFileProcessed(dataset);
+
     } catch (err) {
       console.error("❌ Upload failed:", err);
-      setError("Failed to read file. Please try again.");
+      setError("Failed to read or upload file. Please try again.");
     } finally {
       setBusy(false);
       setShowConfirm(false);
@@ -64,19 +65,19 @@ export default function UploaderPanel() {
 
   const handleChangeHeader = async (newIndex) => {
     if (!session?.dataset || !originalFileText) return;
-    
+
     setBusy(true);
     try {
       const lines = originalFileText.split(/\r?\n/).filter(Boolean);
       const sample = lines.slice(newIndex).join("\n");
-      
+
       const parsed = Papa.parse(sample, {
         header: true,
         skipEmptyLines: true,
         dynamicTyping: true,
         transformHeader: (h) => h.trim(),
       });
-      
+
       const updatedDataset = {
         ...session.dataset,
         headers: parsed.meta.fields || [],
@@ -85,12 +86,11 @@ export default function UploaderPanel() {
         detection: {
           ...session.dataset.detection,
           headerIndex: newIndex,
-          confidence: newIndex === 0 ? 'high' : 'medium' // Update confidence
-        }
+          confidence: newIndex === 0 ? "high" : "medium",
+        },
       };
-      
+
       setSession((prev) => ({ ...prev, dataset: updatedDataset }));
-      
     } catch (err) {
       console.error("Failed to change header:", err);
       setError("Failed to update header row");
@@ -100,9 +100,8 @@ export default function UploaderPanel() {
   };
 
   const handleConfirmHeader = () => {
-    // Simply remove the detection banner while keeping the dataset
     const updatedDataset = { ...session.dataset };
-    delete updatedDataset.detection; // Remove detection to hide banner
+    delete updatedDataset.detection;
     setSession((prev) => ({ ...prev, dataset: updatedDataset }));
   };
 
@@ -120,29 +119,31 @@ export default function UploaderPanel() {
         accept=".csv,.xlsx,.xls,.txt,.docx"
         className="block border border-[var(--border)] rounded-lg p-2 w-full text-sm cursor-pointer"
         onChange={handleFile}
+        disabled={busy}
       />
 
       {busy && (
         <p className="mt-2 text-sm text-[var(--brand1)] animate-pulse">
-          Parsing file...
+          ⏳ Parsing file and syncing with backend...
         </p>
       )}
       {error && <p className="mt-2 text-sm text-red-500">⚠️ {error}</p>}
 
-      {/* 🧠 Smart header detection banner - FIXED CONDITION */}
+      {/* 🧠 Smart header detection banner */}
       {ds?.detection && (
         <HeaderConfirmBanner
           detection={ds.detection}
           headers={ds.headers}
           onChangeHeader={handleChangeHeader}
-          onDismiss={handleConfirmHeader} // Fixed function name
+          onDismiss={handleConfirmHeader}
         />
       )}
 
-      {/* Debug info - remove in production */}
-      {process.env.NODE_ENV === 'development' && ds && (
+      {/* ⚙️ Dev Debug Section */}
+      {process.env.NODE_ENV === "development" && ds && (
         <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-          <strong>Debug:</strong> Dataset loaded - Headers: {ds.headers?.length}, Rows: {ds.rows?.length}, Detection: {ds.detection ? 'Yes' : 'No'}
+          <strong>Debug:</strong> Headers: {ds.headers?.length}, Rows:{" "}
+          {ds.rows?.length}, Detection: {ds.detection ? "Yes" : "No"}
         </div>
       )}
 

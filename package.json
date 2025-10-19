@@ -1,16 +1,18 @@
 {
-  "name": "smartdoc-enterprise",
+  "name": "smartdoc-enterprise-phase2-ready",
   "version": "2.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "prebuild": "chmod +x ./node_modules/.bin/vite || echo 'Skip chmod on Windows/Vercel'",
     "build": "node ./node_modules/vite/bin/vite.js build",
     "dev": "vite",
-    "preview": "vite preview"
-  },
-  "engines": {
-    "node": ">=18"
+    "preview": "vite preview",
+    "dev:backend": "cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\""
   },
   "dependencies": {
     "classnames": "^2.5.1",
@@ -31,6 +33,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.2.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "vite": "^5.4.10"
