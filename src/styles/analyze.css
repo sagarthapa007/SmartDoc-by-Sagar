@@ -1,0 +1,6 @@
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.btn { border: 1px solid var(--border); background: var(--surface); padding: 8px 12px; border-radius: 8px; font-size: 14px; }
+.btn:hover { background: var(--muted); }
+.btn-primary { border: none; background: linear-gradient(135deg, var(--brand), var(--accent)); color: white; }
+.btn-primary:hover { filter: brightness(1.03); }
+.btn-xs { padding: 4px 8px; font-size: 12px; border-radius: 6px; }

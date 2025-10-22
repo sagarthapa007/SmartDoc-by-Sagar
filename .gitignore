@@ -1,6 +1,7 @@
 # =====================================================
 # 🚀 SMARTDOC ENTERPRISE - FULL PROJECT .gitignore
 # Covers: Frontend (Vite/React) + Backend (FastAPI)
+# Updated: 2025-10-22
 # =====================================================
 
 # === 📦 Node / Vite Frontend ===
@@ -15,6 +16,11 @@ build/
 .vscode/
 coverage/
 *.lock
+*.log
+*.pid
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # === ⚙️ Environment & Config Files ===
 .env
@@ -28,6 +34,11 @@ coverage/
 *.config
 *.bak
 *.tmp
+.env.backup
+credentials.json
+config.local.json
+supabase/config.json
+supabase/.temp/
 
 # === 🧠 Python / FastAPI Backend ===
 backend/.venv/
@@ -46,15 +57,22 @@ backend/*.db
 backend/*.sqlite3
 backend/.env
 backend/.env.*
+backend/runtime/
+backend/uploads/
+backend/temp/
+backend/__pycache__/
+backend/app/__pycache__/
+backend/tests/
+backend/.coverage
 
 # === 🧠 ML & Cache Files ===
 backend/app/ml/data_type_model.pkl
 backend/app/ml/model_cache.pkl
-backend/app/cache/
-backend/app/__pycache__/
 backend/app/ml/__pycache__/
 backend/app/intelligence/__pycache__/
 backend/app/routes/__pycache__/
+backend/app/cache/
+__pycache__/
 
 # === 🧰 Build & Packaging Artifacts ===
 *.egg-info/
@@ -64,24 +82,42 @@ backend/app/routes/__pycache__/
 *.zip
 *.whl
 pip-wheel-metadata/
-__pycache__/
+*.manifest
+*.dist-info
+MANIFEST
+build/
+dist/
 
-# === 🪟 OS & System Files ===
-.DS_Store
-Thumbs.db
-desktop.ini
-ehthumbs.db
-Icon?
-.trash-*
+# === ☁️ Render / Deployment / Docker ===
+.render/
+render.yaml
+Dockerfile
+docker-compose.yml
+*.dockerfile
+*.dockerignore
+
+# === 🧩 Supabase / Cloud Integration ===
+supabase/.branches/
+supabase/.temp/
+supabase/functions/.env
+supabase/functions/node_modules/
+supabase/.env
+supabase/migrations/.snapshots/
+.supabase/
 
 # === 🧾 Logs & Runtime ===
 logs/
 *.log
-*.pid
-*.seed
-*.out
 nohup.out
 celerybeat-schedule
+*.out
+*.seed
+tmp/
+temp/
+runtime/
+sessions/
+instance/
+__logs__/
 
 # === 🧪 Coverage / Test ===
 coverage/
@@ -93,6 +129,8 @@ htmlcov/
 .pyre/
 pytestdebug.log
 .pytype/
+reports/
+test_output/
 
 # === 🧱 IDEs & Misc Tools ===
 .idea/
@@ -100,10 +138,22 @@ pytestdebug.log
 .history/
 .sublime-project
 .sublime-workspace
+.code-workspace
 
 # === 🗂️ Temporary or local assets ===
 backend/test_*.json
 samples/
-temp/
-tmp/
 drafts/
+designs/
+screenshots/
+*.tmp.*
+*.swp
+*.swo
+
+# === 🪟 OS & System Files ===
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+Icon?
+.trash-*

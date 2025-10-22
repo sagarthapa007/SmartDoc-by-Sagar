@@ -2,6 +2,40 @@ import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import mammoth from "mammoth";
 
+// File type detection helper
+export function getFileTypeInfo(filename) {
+  const extension = filename.toLowerCase().match(/\.[^.]+$/)?.[0] || '';
+  const typeMap = {
+    '.csv': { type: 'data', label: 'CSV Data' },
+    '.xlsx': { type: 'data', label: 'Excel Spreadsheet' },
+    '.xls': { type: 'data', label: 'Excel Spreadsheet' },
+    '.json': { type: 'data', label: 'JSON Data' },
+    '.xml': { type: 'data', label: 'XML Data' },
+    '.docx': { type: 'document', label: 'Word Document' },
+    '.doc': { type: 'document', label: 'Word Document' },
+    '.pdf': { type: 'document', label: 'PDF Document' },
+    '.txt': { type: 'document', label: 'Text File' },
+    '.rtf': { type: 'document', label: 'Rich Text' },
+    '.pptx': { type: 'presentation', label: 'PowerPoint' },
+    '.ppt': { type: 'presentation', label: 'PowerPoint' },
+    '.jpg': { type: 'image', label: 'JPEG Image' },
+    '.jpeg': { type: 'image', label: 'JPEG Image' },
+    '.png': { type: 'image', label: 'PNG Image' },
+    '.gif': { type: 'image', label: 'GIF Image' },
+    '.zip': { type: 'archive', label: 'ZIP Archive' },
+    '.rar': { type: 'archive', label: 'RAR Archive' },
+    '.7z': { type: 'archive', label: '7-Zip Archive' },
+    '.odt': { type: 'document', label: 'OpenDocument Text' },
+    '.ods': { type: 'data', label: 'OpenDocument Spreadsheet' },
+    '.odp': { type: 'presentation', label: 'OpenDocument Presentation' }
+  };
+  
+  return typeMap[extension] || { 
+    type: 'unknown', 
+    label: 'Unknown File' 
+  };
+}
+
 /**
  * Smart header detection with confidence scoring
  */
@@ -21,9 +55,7 @@ function detectHeaderRow(lines, options = {}) {
     score += (nonNumeric / fields.length) * 30;
 
     // Heuristic 2: Capitalization patterns
-    const capitalized = fields.filter(f => 
-      f && /^[A-Z]/.test(f)
-    ).length;
+    const capitalized = fields.filter(f => f && /^[A-Z]/.test(f)).length;
     score += (capitalized / fields.length) * 20;
 
     // Heuristic 3: Common header keywords
@@ -65,24 +97,49 @@ function detectHeaderRow(lines, options = {}) {
 }
 
 /**
- * Unified ingest with smart header detection.
+ * Unified ingest with smart header detection and universal file support.
  */
 export async function ingestFile(file) {
   const name = file.name.toLowerCase();
   const meta = { name: file.name, size: file.size, mime: file.type };
+  const fileTypeInfo = getFileTypeInfo(file.name);
 
-  console.log('📂 Processing file:', file.name);
+  console.log('📂 Processing file:', file.name, 'Type:', fileTypeInfo.label);
 
-  if (name.endsWith(".csv")) return await parseCSV(file, meta);
-  if (name.endsWith(".xlsx") || name.endsWith(".xls")) return await parseExcel(file, meta);
-  if (name.endsWith(".docx")) return await parseDocx(file, meta);
-  if (name.endsWith(".txt")) return await parseText(file, meta);
-
-  throw new Error("Unsupported file type");
+  try {
+    // Data files with tabular structure
+    if (name.endsWith(".csv")) return await parseCSV(file, meta, fileTypeInfo);
+    if (name.endsWith(".xlsx") || name.endsWith(".xls")) return await parseExcel(file, meta, fileTypeInfo);
+    
+    // Document files with potential tabular data
+    if (name.endsWith(".docx")) return await parseDocx(file, meta, fileTypeInfo);
+    if (name.endsWith(".txt")) return await parseText(file, meta, fileTypeInfo);
+    
+    // JSON files
+    if (name.endsWith(".json")) return await parseJSON(file, meta, fileTypeInfo);
+    
+    // XML files  
+    if (name.endsWith(".xml")) return await parseXML(file, meta, fileTypeInfo);
+    
+    // For other file types, return basic file info
+    return await parseGenericFile(file, meta, fileTypeInfo);
+    
+  } catch (error) {
+    console.error('❌ File processing failed:', error);
+    // Return a graceful fallback instead of throwing
+    return {
+      kind: "file",
+      meta,
+      fileType: fileTypeInfo,
+      originalName: file.name,
+      error: error.message,
+      content: null
+    };
+  }
 }
 
 /* ---------- CSV ---------- */
-async function parseCSV(file, meta) {
+async function parseCSV(file, meta, fileTypeInfo) {
   try {
     const text = await file.text();
     const lines = text.split(/\r?\n/).filter(Boolean);
@@ -112,6 +169,8 @@ async function parseCSV(file, meta) {
       headers, 
       rows, 
       meta, 
+      fileType: fileTypeInfo,
+      originalName: file.name,
       headerIndex,
       detection 
     };
@@ -122,7 +181,7 @@ async function parseCSV(file, meta) {
 }
 
 /* ---------- EXCEL ---------- */
-async function parseExcel(file, meta) {
+async function parseExcel(file, meta, fileTypeInfo) {
   try {
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: "array" });
@@ -154,6 +213,8 @@ async function parseExcel(file, meta) {
       headers, 
       rows, 
       meta, 
+      fileType: fileTypeInfo,
+      originalName: file.name,
       headerIndex,
       detection 
     };
@@ -164,7 +225,7 @@ async function parseExcel(file, meta) {
 }
 
 /* ---------- TEXT ---------- */
-async function parseText(file, meta) {
+async function parseText(file, meta, fileTypeInfo) {
   try {
     const text = await file.text();
     const lines = text.split(/\r?\n/).filter(Boolean);
@@ -191,6 +252,8 @@ async function parseText(file, meta) {
       headers, 
       rows, 
       meta, 
+      fileType: fileTypeInfo,
+      originalName: file.name,
       headerIndex,
       detection 
     };
@@ -201,7 +264,7 @@ async function parseText(file, meta) {
 }
 
 /* ---------- DOCX ---------- */
-async function parseDocx(file, meta) {
+async function parseDocx(file, meta, fileTypeInfo) {
   try {
     const buffer = await file.arrayBuffer();
 
@@ -230,20 +293,97 @@ async function parseDocx(file, meta) {
         kind: "table",
         headers,
         rows: objects,
+        meta: { ...meta, source: "docx", mode: "table" },
+        fileType: fileTypeInfo,
+        originalName: file.name,
         headerIndex: 0,
         detection: { headerIndex: 0, confidence: "medium", score: 65 },
-        meta: { ...meta, source: "docx", mode: "table" },
       };
     }
 
     const { value: text } = await mammoth.extractRawText({ arrayBuffer: buffer });
     console.log(`📝 DOCX text extracted — ${text.length} characters`);
-    return { kind: "doc", text, meta: { ...meta, source: "docx", mode: "text" } };
+    return { 
+      kind: "doc", 
+      text, 
+      meta: { ...meta, source: "docx", mode: "text" },
+      fileType: fileTypeInfo,
+      originalName: file.name
+    };
 
   } catch (error) {
     console.error("❌ DOCX parse error:", error);
     throw error;
   }
+}
+
+/* ---------- JSON ---------- */
+async function parseJSON(file, meta, fileTypeInfo) {
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    
+    console.log('📊 JSON data loaded');
+    
+    // Handle array of objects (tabular data)
+    if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
+      const headers = Object.keys(data[0]);
+      return {
+        kind: "table",
+        headers,
+        rows: data,
+        meta,
+        fileType: fileTypeInfo,
+        originalName: file.name,
+        headerIndex: 0,
+        detection: { headerIndex: 0, confidence: "high", score: 90 }
+      };
+    }
+    
+    // Handle object data
+    return {
+      kind: "json",
+      data,
+      meta,
+      fileType: fileTypeInfo,
+      originalName: file.name
+    };
+    
+  } catch (error) {
+    console.error('❌ JSON parse error:', error);
+    throw error;
+  }
+}
+
+/* ---------- XML ---------- */
+async function parseXML(file, meta, fileTypeInfo) {
+  try {
+    const text = await file.text();
+    // Basic XML parsing - could be enhanced with proper XML parser
+    return {
+      kind: "xml",
+      content: text,
+      meta,
+      fileType: fileTypeInfo,
+      originalName: file.name
+    };
+  } catch (error) {
+    console.error('❌ XML parse error:', error);
+    throw error;
+  }
+}
+
+/* ---------- GENERIC FILE ---------- */
+async function parseGenericFile(file, meta, fileTypeInfo) {
+  // For unsupported file types, return basic file info
+  return {
+    kind: "file",
+    meta,
+    fileType: fileTypeInfo,
+    originalName: file.name,
+    content: null,
+    message: `File type ${fileTypeInfo.label} requires specialized processing`
+  };
 }
 
 /**

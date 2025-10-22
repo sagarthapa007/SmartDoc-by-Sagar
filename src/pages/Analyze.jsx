@@ -1,387 +1,485 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import StatCards from "@components/analyzer/StatCards";
-import Histogram from "@charts/Histogram";
-import Heatmap from "@charts/Heatmap";
-import { useSession } from "@context/SessionContext.jsx";
+import React, { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Sparkles, Activity, BarChart3, Brain, AlertTriangle, 
+  RefreshCw, TrendingUp, Database, Lightbulb, Zap,
+  CheckCircle, Clock, AlertCircle, Upload
+} from "lucide-react";
+import { useAnalyzeStore } from "@/store/analyze.store.js";
 
-// 🧩 Intelligence Components
-import AskSmartDocPanel from "@/components/panels/AskSmartDocPanel.jsx";
-import SuggestChartButton from "@/components/analyzer/SuggestChartButton.jsx";
-import MultiFilterPanel from "@/components/analyzer/MultiFilterPanel.jsx";
-import ExecutiveSummary from "@/components/analyzer/ExecutiveSummary.jsx";
+// Panels
+import DataStructurePanel from "@/components/analyzer/DataStructurePanel.jsx";
+import QualityPanel from "@/components/analyzer/QualityPanel.jsx";
 import QualityScore from "@/components/analyzer/QualityScore.jsx";
-import InsightCards from "@/components/analyzer/InsightCards.jsx";
-import NarrativePanel from "@/components/panels/NarrativePanel.jsx";
-import RevenueTrendChart from "@/charts/RevenueTrendChart.jsx";
-import TopPerformersChart from "@/charts/TopPerformersChart.jsx";
+import CorrelationFinder from "@/components/analyzer/CorrelationFinder.jsx";
+import ChartBuilderPanel from "@/components/analyzer/ChartBuilderPanel.jsx";
 
-// 🧠 Utils
-import { calculateQualityScore } from "@/utils/qualityMetrics.js";
-import { exportToCSV } from "@/utils/exportUtils.js";
-import { buildRevenueTrend, topBy, quickSummary } from "@/sampleData.js";
+// Enhanced Card component with status indicators
+const Card = ({ title, icon: Icon, children, right, status, className = "" }) => {
+  const statusConfig = {
+    loading: { color: "blue", icon: Clock },
+    success: { color: "green", icon: CheckCircle },
+    warning: { color: "amber", icon: AlertCircle },
+    error: { color: "red", icon: AlertTriangle }
+  };
 
-// 🆕 Updated backend client imports
-import {
-  detectData,
-  analyzeData,
-  performAction,
-} from "@/utils/backendClient.js";
+  const StatusIcon = status ? statusConfig[status]?.icon : null;
+  const statusColor = status ? statusConfig[status]?.color : "gray";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow ${className}`}
+    >
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-2">
+          {Icon && (
+            <Icon 
+              size={18} 
+              className={`${
+                status ? `text-${statusColor}-600` : 'text-blue-600'
+              }`} 
+            />
+          )}
+          <h3 className="text-sm font-semibold">{title}</h3>
+          {StatusIcon && (
+            <StatusIcon 
+              size={14} 
+              className={`text-${statusColor}-500 animate-pulse`} 
+            />
+          )}
+        </div>
+        {right}
+      </div>
+      <div className="p-4">{children}</div>
+    </motion.div>
+  );
+};
+
+// Loading shimmer component
+const LoadingShimmer = () => (
+  <div className="space-y-3">
+    {[...Array(3)].map((_, i) => (
+      <div key={i} className="flex gap-3 items-center">
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse flex-1" />
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/4" />
+      </div>
+    ))}
+  </div>
+);
+
+// Insight card component
+const InsightCard = ({ insight, index }) => (
+  <motion.div
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: index * 0.1 }}
+    className="p-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gradient-to-r from-blue-50/50 to-transparent dark:from-blue-950/20 hover:shadow-sm transition-all"
+  >
+    <div className="flex items-start gap-3">
+      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mt-0.5">
+        <Lightbulb size={12} className="text-blue-600 dark:text-blue-400" />
+      </div>
+      <div className="flex-1">
+        <p className="text-sm leading-relaxed">
+          {typeof insight === 'string' ? insight : insight?.text ?? JSON.stringify(insight)}
+        </p>
+        {insight?.confidence && (
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+              <div 
+                className="bg-green-500 h-1.5 rounded-full transition-all duration-500"
+                style={{ width: `${insight.confidence * 100}%` }}
+              />
+            </div>
+            <span className="text-xs text-gray-500">
+              {Math.round(insight.confidence * 100)}% confidence
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  </motion.div>
+);
+
+// Metric card component
+const MetricCard = ({ label, value, icon: Icon, trend, description }) => (
+  <div className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-800/50">
+    <div className="flex items-center gap-3">
+      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
+        <Icon size={16} className="text-blue-600 dark:text-blue-400" />
+      </div>
+      <div>
+        <div className="text-sm font-medium">{label}</div>
+        {description && (
+          <div className="text-xs text-gray-500">{description}</div>
+        )}
+      </div>
+    </div>
+    <div className="text-right">
+      <div className="font-bold text-lg">{value}</div>
+      {trend && (
+        <div className={`text-xs ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
+          {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}%
+        </div>
+      )}
+    </div>
+  </div>
+);
 
 export default function Analyze() {
-  const { session } = useSession();
-  const ds = session?.dataset;
+  const {
+    dataset,
+    schema, quality, domain,
+    insights, suggestedCharts, correlations,
+    loading, error,
+    detectSchemaAndQuality, analyze, runCorrelate
+  } = useAnalyzeStore();
 
-  // 🎯 State Management
-  const [filteredData, setFilteredData] = useState(ds?.rows || []);
-  const [activeTab, setActiveTab] = useState("overview");
-  const [exportLoading, setExportLoading] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [backendInsights, setBackendInsights] = useState(null);
-  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
-  
-  const initialQuery = useMemo(() => localStorage.getItem("smartdoc_search") || "", []);
+  const [ranOnce, setRanOnce] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
 
-  // 🧩 Universal Context
-  const universalContext = useMemo(() => {
-    if (!ds?.headers) return { dataType: "unknown", confidence: 0.1 };
-    
-    const numericCols = ds.headers.filter(h =>
-      filteredData.some(r => !isNaN(parseFloat(r[h])))
-    );
-    
-    return {
-      dataType: "generic_dataset",
-      confidence: Math.min(0.3 + numericCols.length / ds.headers.length, 1).toFixed(2),
-      primaryMetric: numericCols[0] || "auto_metric",
-    };
-  }, [ds, filteredData]);
-
-  // 🧮 Local Data Quality
-  const qualityMetrics = useMemo(
-    () => calculateQualityScore(filteredData),
-    [filteredData]
-  );
-
-  // 📈 Local Derived Insights
-  const revenueTrendData = useMemo(() => buildRevenueTrend(filteredData), [filteredData]);
-  const topPerformersData = useMemo(() => topBy(filteredData, "Customer", "revenue"), [filteredData]);
-  const businessSummary = useMemo(
-    () => quickSummary(filteredData, universalContext.primaryMetric),
-    [filteredData, universalContext.primaryMetric]
-  );
-
-  // 📊 KPI Configuration
-  const executiveKPIs = useMemo(() => ({
-    primaryMetric: universalContext.primaryMetric,
-    confidence: universalContext.confidence,
-    trends: { growth: 0.153, direction: "positive" },
-    dataType: universalContext.dataType,
-    rowCount: filteredData.length,
-    columnCount: ds?.headers?.length || 0,
-  }), [universalContext, filteredData, ds]);
-
-  // 🆕 Backend Insights Fetcher (Detect → Analyze)
+  // Enhanced auto-run with progress simulation
   useEffect(() => {
-    if (!ds?.rows?.length) return;
+    if (!dataset) return;
 
-    const fetchBackend = async () => {
-      setLoadingAnalysis(true);
-      try {
-        // Step 1️⃣ Detect dataset type
-        const detected = await detectData(ds);
-        const dataType = detected?.data_type || "generic_dataset";
-
-        // Step 2️⃣ Determine persona context
-        const persona = session?.user?.persona || "manager";
-        const context = { persona, data_type: dataType };
-
-        // Step 3️⃣ Send for backend analysis
-        const res = await analyzeData(ds, context);
-
-        if (res?.for_persona || res?.success) {
-          console.log("✅ Backend analysis:", res);
-          setBackendInsights(res);
-        } else {
-          console.warn("⚠️ Backend returned no insights, using fallback.");
-          setBackendInsights(null);
-        }
-      } catch (err) {
-        console.error("❌ Backend error:", err);
-        setBackendInsights(null);
-      } finally {
-        setLoadingAnalysis(false);
-      }
+    let progressInterval;
+    const runAnalysis = async () => {
+      setAnalysisProgress(10);
+      
+      await detectSchemaAndQuality();
+      setAnalysisProgress(50);
+      
+      await analyze();
+      setAnalysisProgress(100);
+      
+      setTimeout(() => setAnalysisProgress(0), 1000);
+      setRanOnce(true);
     };
 
-    fetchBackend();
-  }, [ds, session]);
+    // Simulate progress for better UX
+    progressInterval = setInterval(() => {
+      setAnalysisProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return prev;
+        }
+        return prev + 10;
+      });
+    }, 300);
 
-  // 📤 Export Handler
-  const handleExport = useCallback(async () => {
-    setExportLoading(true);
-    try {
-      await exportToCSV(filteredData);
-    } catch (error) {
-      console.error("Export failed:", error);
-    } finally {
-      setExportLoading(false);
-    }
-  }, [filteredData]);
+    runAnalysis();
 
-  // 🆕 Perform Action Handler (for backend actions)
-  const handleAction = useCallback(async (actionType, payload = {}) => {
-    try {
-      console.log(`🚀 Executing ${actionType}...`);
-      const res = await performAction(actionType, payload);
-      if (res?.preview) {
-        alert(
-          `Preview:\nRemoved: ${res.preview.will_remove}\nKept: ${res.preview.will_keep}`
-        );
-      } else {
-        console.log("Action result:", res);
-      }
-    } catch (err) {
-      console.error(`❌ ${actionType} failed:`, err);
-    }
-  }, []);
+    return () => {
+      if (progressInterval) clearInterval(progressInterval);
+    };
+  }, [dataset?.headers?.join(","), dataset?.rows?.length]);
 
-  const toggleMobileMenu = useCallback(() => setMobileMenuOpen(v => !v), []);
-  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
+  const headers = dataset?.headers || [];
+  const rows = dataset?.rows || [];
 
-  const handleTabChange = useCallback((tabId) => {
-    setActiveTab(tabId);
-    closeMobileMenu();
-  }, [closeMobileMenu]);
+  const qualityIssues = useMemo(() => {
+    const missing = quality?.missing || {};
+    return Object.values(missing).reduce((a, b) => a + (b || 0), 0);
+  }, [quality]);
 
-  const analysisTabs = useMemo(() => [
-    { id: "overview", label: "Overview", icon: "📊" },
-    { id: "technical", label: "Technical", icon: "🔍" },
-    { id: "business", label: "Business", icon: "💼" },
-    { id: "quality", label: "Quality", icon: "✅" },
-  ], []);
+  const dataTypes = useMemo(() => {
+    if (!schema?.columns) return { numeric: 0, categorical: 0 };
+    return {
+      numeric: schema.columns.filter(col => col.type === 'number').length,
+      categorical: schema.columns.filter(col => col.type === 'string').length
+    };
+  }, [schema]);
 
-  // Fallback insights for different tabs
-  const technicalFallback = useMemo(() => ({
-    technical: { summary: { rowCount: filteredData.length, colCount: ds?.headers?.length || 0 } },
-    business: { context: { dataType: universalContext.dataType } },
-  }), [filteredData, ds, universalContext]);
+  const handleReanalyze = async () => {
+    setAnalysisProgress(10);
+    await detectSchemaAndQuality();
+    await analyze();
+    setAnalysisProgress(0);
+  };
 
-  const businessFallback = useMemo(() => ({
-    business: { context: universalContext },
-    technical: { summary: { rowCount: filteredData.length, colCount: ds?.headers?.length || 0 } },
-  }), [filteredData, ds, universalContext]);
-
-  const narrativeFallback = useMemo(() => ({
-    technical: { summary: { rowCount: filteredData.length, colCount: ds?.headers?.length || 0 } },
-    business: { context: universalContext },
-    quality: qualityMetrics,
-  }), [filteredData, ds, universalContext, qualityMetrics]);
-
-  // 🚫 No dataset case
-  if (!ds) {
-    return (
-      <div className="flex flex-col h-[calc(100vh-96px)] items-center justify-center text-center p-6">
-        <div className="text-6xl mb-4 opacity-50">📊</div>
-        <h3 className="text-lg font-semibold text-[var(--text-strong)] mb-2">
-          No Dataset Loaded
-        </h3>
-        <p className="text-sm text-[var(--text-muted)] max-w-md mb-4">
-          Upload a dataset to unlock powerful analysis features.
-        </p>
-        <button
-          onClick={() => (window.location.href = "/upload")}
-          className="btn btn-primary w-full max-w-[200px]"
-        >
-          Go to Upload
-        </button>
-      </div>
-    );
-  }
-
-  // === MAIN RENDER ===
   return (
-    <div className="flex flex-col h-[calc(100vh-96px)] overflow-hidden bg-[var(--background)] text-[var(--text)]">
-      {/* === HEADER === */}
-      <header className="flex-none border-b border-[var(--border)] bg-[var(--surface)]">
-        <div className="px-4 py-3 sm:px-6 sm:py-4">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div className="flex items-center justify-between sm:block">
-              <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-[var(--text-strong)]">
-                  Data Analysis
-                </h1>
-                <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
-                  {filteredData.length.toLocaleString()} records
-                </p>
-              </div>
-              <button
-                onClick={toggleMobileMenu}
-                className="sm:hidden btn btn-ghost p-2"
-              >
-                {mobileMenuOpen ? "✕" : "☰"}
-              </button>
+    <div className="max-w-7xl mx-auto px-4 pb-16">
+      {/* Enhanced Hero Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-start justify-between gap-4 mt-4 mb-6"
+      >
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600">
+              <Sparkles className="text-white" size={24} />
             </div>
-
-            <div className={`${mobileMenuOpen ? "flex" : "hidden"} sm:flex flex-col sm:flex-row gap-3 sm:items-center`}>
-              <button
-                onClick={handleExport}
-                disabled={exportLoading}
-                className="btn btn-outline flex items-center justify-center gap-2 text-sm disabled:opacity-50 w-full sm:w-auto"
-              >
-                {exportLoading ? "⏳" : "📥"}
-                <span className="sm:inline hidden">Export CSV</span>
-              </button>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Smart Analysis</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                AI-powered insights and automated data profiling
+              </p>
             </div>
           </div>
-        </div>
-
-        <div className="px-4 sm:px-6 pb-3">
-          <div className="flex bg-[var(--muted)] rounded-lg p-1 overflow-x-auto">
-            {analysisTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all flex-shrink-0 ${
-                  activeTab === tab.id
-                    ? "bg-[var(--background)] text-[var(--text-strong)] shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text)]"
-                }`}
-              >
-                <span>{tab.icon}</span>
-                <span className="hidden sm:inline">{tab.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="px-4 sm:px-6 pb-4">
-          <div className="overflow-x-auto">
-            <div className="min-w-max">
-              <StatCards headers={ds.headers} rows={filteredData} />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* === MAIN CONTENT === */}
-      <main className="flex-1 overflow-auto">
-        <div className="p-4 sm:p-6 space-y-6">
-          {loadingAnalysis && (
-            <div className="text-center text-sm text-[var(--text-muted)] animate-pulse">
-              🔄 Analyzing dataset on SmartDoc Engine...
-            </div>
-          )}
-
-          <section className="space-y-4 sm:grid sm:grid-cols-1 lg:grid-cols-3 sm:gap-4">
-            <ExecutiveSummary
-              kpis={executiveKPIs}
-              trends={executiveKPIs.trends}
-              summary={backendInsights?.summary || businessSummary}
-              className="lg:col-span-2"
-              compact={true}
-            />
-            <QualityScore
-              quality={backendInsights?.quality || qualityMetrics}
-              dataType={universalContext.dataType}
-              compact={true}
-            />
-          </section>
-
-          <MultiFilterPanel
-            data={ds.rows}
-            onFilter={setFilteredData}
-            context={universalContext}
-            mobileOptimized={true}
-          />
-
-          {activeTab === "overview" && (
-<section className="space-y-6">
-    {/* existing charts */}
-    <div className="space-y-6 sm:grid sm:grid-cols-1 xl:grid-cols-2 sm:gap-6">
-      <RevenueTrendChart
-        data={revenueTrendData}
-        title="Revenue Trends"
-        timeframe="Last 12 Months"
-      />
-      <TopPerformersChart
-        data={topPerformersData}
-        metric="revenue"
-        title="Top Customers"
-        limit={6}
-      />
-    </div>
-
-    {/* 🆕 intelligence add-ons */}
-    <SuggestChartButton dataset={ds} />
-    <AskSmartDocPanel dataset={ds} />
-
-    <NarrativePanel
-      insights={backendInsights?.narrative || {
-        technical: { summary: { rowCount: filteredData.length, colCount: ds.headers.length } },
-        business: { context: universalContext },
-        quality: qualityMetrics,
-      }}
-      context={universalContext}
-      compact={true}
-    />
-  </section>
-          )}
-
-          {activeTab === "technical" && (
-            <section className="space-y-6">
-              <div className="space-y-6 sm:grid sm:grid-cols-1 lg:grid-cols-2 sm:gap-6">
-                <div className="card p-4">
-                  <h3 className="text-base font-semibold mb-4">Correlations</h3>
-                  <div className="h-[280px] sm:h-[320px]">
-                    <Heatmap headers={ds.headers} rows={filteredData} />
-                  </div>
-                </div>
-                <div className="card p-4">
-                  <h3 className="text-base font-semibold mb-4">Distributions</h3>
-                  <div className="h-[280px] sm:h-[320px]">
-                    <Histogram headers={ds.headers} rows={filteredData} />
-                  </div>
-                </div>
+          
+          {/* Progress Bar */}
+          {analysisProgress > 0 && (
+            <div className="mt-4 max-w-md">
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>Analyzing data...</span>
+                <span>{analysisProgress}%</span>
               </div>
-              <InsightCards
-                insights={backendInsights?.technical || technicalFallback}
-                variant="technical"
-                compact={true}
-                onAction={handleAction}
-              />
-            </section>
-          )}
-
-          {activeTab === "business" && (
-            <section className="space-y-6">
-              <div className="space-y-6 sm:grid sm:grid-cols-1 lg:grid-cols-2 sm:gap-6">
-                <RevenueTrendChart data={revenueTrendData} title="Performance" />
-                <TopPerformersChart data={topPerformersData} metric="revenue" title="Rankings" />
-              </div>
-              <InsightCards
-                insights={backendInsights?.business || businessFallback}
-                variant="business"
-                compact={true}
-                onAction={handleAction}
-              />
-            </section>
-          )}
-
-          {activeTab === "quality" && (
-            <section className="space-y-6">
-              <div className="card p-4">
-                <h3 className="text-base font-semibold mb-4">Data Quality</h3>
-                <QualityScore
-                  quality={backendInsights?.quality || qualityMetrics}
-                  showBreakdown={true}
-                  showRecommendations={true}
-                  compact={true}
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <motion.div 
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-300"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${analysisProgress}%` }}
                 />
               </div>
-            </section>
+            </div>
           )}
         </div>
-      </main>
+        
+        <div className="flex items-center gap-2">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleReanalyze}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            {loading ? "Analyzing..." : "Re-analyze"}
+          </motion.button>
+        </div>
+      </motion.div>
+
+      {/* Status Messages */}
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="mb-4 rounded-xl border border-blue-200/60 bg-blue-50/60 dark:border-blue-900 dark:bg-blue-950/30 px-4 py-3 text-sm"
+          >
+            <div className="flex items-center gap-3">
+              <Zap size={16} className="text-blue-600 animate-pulse" />
+              <div>
+                <div className="font-medium">Running deep analysis</div>
+                <div className="text-blue-700 dark:text-blue-300">
+                  Crunching stats, discovering correlations, and generating AI insights...
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="mb-4 rounded-xl border border-red-200/60 bg-red-50/60 dark:border-red-900 dark:bg-red-950/30 px-4 py-3 text-sm"
+          >
+            <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
+              <AlertTriangle size={16}/>
+              <span>{error}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Grid */}
+      {dataset ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Data Overview */}
+          <div className="space-y-6">
+            <Card 
+              title="Data Overview" 
+              icon={Database}
+              status={ranOnce ? "success" : "loading"}
+            >
+              <div className="space-y-3">
+                <MetricCard
+                  label="Total Rows"
+                  value={rows.length.toLocaleString()}
+                  icon={Activity}
+                  description="Records in dataset"
+                />
+                <MetricCard
+                  label="Columns"
+                  value={headers.length}
+                  icon={BarChart3}
+                  description={`${dataTypes.numeric} numeric, ${dataTypes.categorical} categorical`}
+                />
+                <MetricCard
+                  label="Data Domain"
+                  value={domain || "—"}
+                  icon={TrendingUp}
+                  description="Identified dataset type"
+                />
+                <MetricCard
+                  label="Quality Issues"
+                  value={qualityIssues}
+                  icon={AlertTriangle}
+                  description="Missing values detected"
+                  trend={-10} // Example improvement trend
+                />
+              </div>
+            </Card>
+
+            <Card 
+              title="Data Quality" 
+              icon={AlertTriangle}
+              status={quality ? "success" : "loading"}
+            >
+              <div className="grid grid-cols-1 gap-4">
+                <QualityScore quality={quality} />
+                {quality ? (
+                  <QualityPanel quality={quality} />
+                ) : (
+                  <LoadingShimmer />
+                )}
+              </div>
+            </Card>
+
+            <Card 
+              title="Data Structure" 
+              icon={BarChart3}
+              status={schema ? "success" : "loading"}
+            >
+              {schema ? (
+                <DataStructurePanel schema={Array.isArray(schema) ? schema : schema?.columns ?? []} />
+              ) : (
+                <LoadingShimmer />
+              )}
+            </Card>
+          </div>
+
+          {/* Middle Column - Insights & Analysis */}
+          <div className="space-y-6">
+            <Card 
+              title="AI Insights" 
+              icon={Brain}
+              status={insights?.length ? "success" : ranOnce ? "warning" : "loading"}
+              right={
+                insights?.length && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                    {insights.length} insights
+                  </span>
+                )
+              }
+            >
+              {insights?.length ? (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {insights.map((insight, i) => (
+                    <InsightCard key={i} insight={insight} index={i} />
+                  ))}
+                </div>
+              ) : ranOnce ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Lightbulb size={32} className="mx-auto mb-3 opacity-50" />
+                  <div>No significant patterns detected</div>
+                  <div className="text-sm">Try adding more data or different metrics</div>
+                </div>
+              ) : (
+                <LoadingShimmer />
+              )}
+            </Card>
+
+            <Card 
+              title="Correlation Finder" 
+              icon={TrendingUp}
+              status={correlations ? "success" : "loading"}
+            >
+              <CorrelationFinder 
+                dataset={rows} 
+                onAuto={(threshold) => runCorrelate(threshold)} 
+              />
+            </Card>
+          </div>
+
+          {/* Right Column - Visualization */}
+          <div className="space-y-6">
+            <Card 
+              title="Suggested Charts" 
+              icon={BarChart3}
+              status={suggestedCharts?.length ? "success" : ranOnce ? "warning" : "loading"}
+              right={
+                suggestedCharts?.length ? (
+                  <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                    {suggestedCharts.length} ready
+                  </span>
+                ) : null
+              }
+            >
+              {suggestedCharts?.length ? (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {suggestedCharts.map((chart, i) => (
+                    <motion.div
+                      key={chart.id || `${chart.type}-${chart.x}-${chart.y}`}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="rounded-lg border border-gray-100 dark:border-gray-800 p-3 hover:border-blue-200 dark:hover:border-blue-800 cursor-pointer transition-all group"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                          {chart.type}
+                        </div>
+                        <div className="flex-1" />
+                        <Sparkles size={12} className="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                      <div className="text-sm font-medium">{chart.title || `${chart.x} vs ${chart.y}`}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {chart.reason || "High correlation detected"}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : ranOnce ? (
+                <div className="text-center py-8 text-gray-500">
+                  <BarChart3 size={32} className="mx-auto mb-3 opacity-50" />
+                  <div>No chart suggestions yet</div>
+                  <div className="text-sm">Build a custom chart to get started</div>
+                </div>
+              ) : (
+                <LoadingShimmer />
+              )}
+            </Card>
+
+            <Card 
+              title="Custom Chart Builder" 
+              icon={Sparkles}
+              status="success"
+            >
+              <ChartBuilderPanel headers={headers} rows={rows} />
+            </Card>
+          </div>
+        </div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="rounded-xl border border-gray-200 dark:border-gray-800 p-8 text-center"
+        >
+          <Database size={48} className="mx-auto mb-4 text-gray-400" />
+          <h3 className="text-lg font-semibold mb-2">No Dataset Found</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Please upload a file to begin analysis
+          </p>
+          <motion.a
+            href="/upload"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+          >
+            <Upload size={16} />
+            Go to Upload
+          </motion.a>
+        </motion.div>
+      )}
     </div>
   );
 }

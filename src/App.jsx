@@ -1,53 +1,78 @@
-import React from "react";
-import Header from "@components/layout/Header.jsx";
-import Container from "@components/layout/Container.jsx";
+import React, { Suspense, lazy } from "react";
+import { Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "@context/ThemeContext.jsx";
 
+// Layout
+import SmartLayout from "@components/layout/SmartLayout.jsx";
+
+// Lazy-loaded pages (better performance)
+const Home = lazy(() => import("@pages/Home.jsx"));
+const Upload = lazy(() => import("@pages/Upload.jsx"));
+const Analyze = lazy(() => import("@pages/Analyze.jsx"));
+const Compare = lazy(() => import("@pages/Compare.jsx"));
+const Reports = lazy(() => import("@pages/Reports.jsx"));
+const History = lazy(() => import("@pages/History.jsx"));
+const Settings = lazy(() => import("@pages/Settings.jsx"));
+const FeatureDetail = lazy(() => import("@pages/features/FeatureDetail.jsx"));
+const Login = lazy(() => import("@pages/Login.jsx")); // ✅ Added Sign-In route
+const Register = lazy(() => import("@/pages/Register.jsx"));
+
+// Providers
 import UIProvider from "@context/UIContext.jsx";
 import { SessionProvider } from "@context/SessionContext.jsx";
 import { ExportProvider } from "@context/ExportContext.jsx";
 import { ReportProvider } from "@context/ReportContext.jsx";
 import { HistoryProvider } from "@context/HistoryContext.jsx";
+import { AuthProvider } from "@context/AuthContext.jsx";
 
-/**
- * ⚙️ Root SmartDoc App (Global Provider Wrapper)
- * -------------------------------------------------
- * - Wraps the entire app with unified global state contexts
- * - Controls UI theme (dark/light) via UIProvider
- * - Delegates routing to Container.jsx (which now includes Home, Upload, etc.)
- * -------------------------------------------------
- */
+import "@styles/globals.css";
+import "@styles/theme.css";
+import "@styles/layout.css";
+
 export default function App() {
   return (
-    <SessionProvider>
-      <ExportProvider>
-        <ReportProvider>
-          <HistoryProvider>
-            <UIProvider>
-              <MainApp />
-            </UIProvider>
-          </HistoryProvider>
-        </ReportProvider>
-      </ExportProvider>
-    </SessionProvider>
-  );
-}
+    <ThemeProvider>
+      <AuthProvider>
+        <SessionProvider>
+          <ExportProvider>
+            <ReportProvider>
+              <HistoryProvider>
+                <UIProvider>
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center h-[calc(100vh-96px)] text-[var(--text-muted)]">
+                        Loading SmartDoc...
+                      </div>
+                    }
+                  >
+                    <Routes>
+                      {/* 🔓 Public route for Login */}
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/register" element={<Register />} />
 
-/**
- * 🎯 MainApp: Renders the app header and main router container
- * ------------------------------------------------------------
- * Uses React Router (Container.jsx) for all route-based navigation.
- * Header stays persistent, ensuring consistent UI across all pages.
- */
-function MainApp() {
-  return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--text)] flex flex-col">
-      {/* 🔹 Global Header */}
-      <Header />
-
-      {/* 🔹 Dynamic Route Container (uses React Router) */}
-      <main className="flex-1 overflow-hidden">
-        <Container />
-      </main>
-    </div>
+                      {/* 🔒 All authenticated pages inside layout */}
+                      <Route path="/" element={<SmartLayout />}>
+                        <Route index element={<Home />} />
+                        <Route path="upload" element={<Upload />} />
+                        <Route path="analyze" element={<Analyze />} />
+                        <Route path="compare" element={<Compare />} />
+                        <Route path="reports" element={<Reports />} />
+                        <Route path="history" element={<History />} />
+                        <Route path="features/:id" element={<FeatureDetail />} />
+                        <Route path="settings" element={<Settings />} />
+                        <Route
+                          path="*"
+                          element={<div className="p-6">404 Not Found</div>}
+                        />
+                      </Route>
+                    </Routes>
+                  </Suspense>
+                </UIProvider>
+              </HistoryProvider>
+            </ReportProvider>
+          </ExportProvider>
+        </SessionProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

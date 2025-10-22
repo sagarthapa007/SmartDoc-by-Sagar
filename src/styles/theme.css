@@ -1,0 +1,195 @@
+/* =========================================================
+   SMARTDOC ENTERPRISE – THEME FOUNDATION (v2.3)
+   Author: Sagar Thapa
+   ========================================================= */
+
+/* ------------------------------
+   🧭 BASE LIGHT THEME
+   ------------------------------ */
+:root {
+  --brandA: #2563eb;
+
+  /* Surfaces */
+  --background: #f8fafc;
+  --card: #ffffff;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-muted: #f1f5f9;
+  --panel: #f8fafc;
+
+  /* Text */
+  --text: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --text-inverse: #ffffff;
+  --muted: #6b7280;
+
+  /* Borders */
+  --border: #e5e7eb;
+  --border-hover: #cbd5e1;
+  --divider: #e2e8f0;
+
+  /* Brand */
+  --brand1: #3b82f6;
+  --brand2: #06b6d4;
+  --brand: var(--brand1);
+  --brand-hover: #2563eb;
+  --brand-light: #dbeafe;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Gradient */
+  --gradient-brand: linear-gradient(135deg, var(--brand1) 0%, var(--brand2) 100%);
+}
+
+/* ------------------------------
+   🌙 DARK THEME (Improved Clarity)
+   ------------------------------ */
+html.dark {
+  --background: #070c16;         /* Base background */
+  --card: #131b2c;               /* Content areas */
+  --surface: #1a2234;            /* Sidebar / topbar */
+  --surface-elevated: #222d46;   /* Modals / popups */
+  --surface-muted: #1c2538;      /* Muted backgrounds */
+  --muted: #374151;              /* Low-contrast UI */
+
+  /* Text hierarchy */
+  --text: #f9fafb;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #64748b;
+  --text-inverse: #0b1120;
+
+  /* Borders */
+  --border: #2f3a53;
+  --border-hover: #475569;
+  --divider: #334155;
+
+  /* Brand */
+  --brand1: #60a5fa;
+  --brand2: #0ea5e9;
+  --brand: var(--brand1);
+  --brand-hover: #3b82f6;
+  --brand-light: rgba(96,165,250,0.2);
+
+  /* Glow depth */
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.6);
+  --shadow-md: 0 6px 10px rgba(0,0,0,0.65);
+  --shadow-lg: 0 12px 18px rgba(0,0,0,0.75);
+
+  /* Gradient */
+  --gradient-brand: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
+}
+
+/* ------------------------------
+   🩵 GLOBAL ELEMENTS
+   ------------------------------ */
+html, body, #root { height: 100%; }
+body {
+  font-family: var(--font-sans);
+  background: var(--background);
+  color: var(--text);
+  transition: background-color var(--transition-base), color var(--transition-base);
+}
+* { -webkit-tap-highlight-color: transparent; }
+
+/* Smooth theme switch */
+html {
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+body, header, aside, main {
+  transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+}
+
+/* ------------------------------
+   🧊 GLASS & GLOW POLISH
+   ------------------------------ */
+header, aside {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.4s ease;
+}
+
+html.dark header,
+html.dark aside {
+  background: linear-gradient(145deg, rgba(26,34,52,0.9), rgba(15,23,42,0.85));
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: 0 2px 15px rgba(0,0,0,0.5);
+}
+
+/* ------------------------------
+   ⚡ ACTIVE STATE GLOW
+   ------------------------------ */
+.active {
+  border-color: var(--brand);
+}
+html.dark .active {
+  background: linear-gradient(90deg, rgba(59,130,246,0.15), rgba(6,182,212,0.15));
+  border-color: rgba(96,165,250,0.4);
+  box-shadow: inset 0 0 12px rgba(59,130,246,0.25),
+              0 0 10px rgba(96,165,250,0.35);
+}
+
+/* ------------------------------
+   🔣 TEXT + UTILITY EFFECTS
+   ------------------------------ */
+.text-gradient {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+html.dark body {
+  text-shadow: 0 0 2px rgba(255,255,255,0.05);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* ------------------------------
+   ✨ ANIMATIONS
+   ------------------------------ */
+@keyframes glowFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.float { animation: float 3s ease-in-out infinite; }
+
+/* ------------------------------
+   📱 RESPONSIVE OPTIMIZATIONS
+   ------------------------------ */
+@media (max-width: 768px) {
+  .mobile-hidden { display: none !important; }
+  .mobile-optimized-chart { height: 250px !important; font-size: 12px; }
+  .touch-target { min-height: 44px; min-width: 44px; }
+}

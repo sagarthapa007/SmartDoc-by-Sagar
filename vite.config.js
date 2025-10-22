@@ -4,7 +4,6 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
-
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -16,35 +15,27 @@ export default defineConfig({
       "@modules": path.resolve(__dirname, "./src/modules"),
       "@charts": path.resolve(__dirname, "./src/charts"),
       "@styles": path.resolve(__dirname, "./src/styles"),
+      "@store": path.resolve(__dirname, "./src/store"),
     },
   },
-
-  optimizeDeps: {
-    include: ["react-window"],
-    force: true, // ✅ ensure react-window is bundled properly
-  },
-
+  optimizeDeps: { include: ["react-window"], force: true },
   build: {
     outDir: "dist",
     emptyOutDir: true,
-    commonjsOptions: {
-      include: [/react-window/, /node_modules/],
-    },
-    rollupOptions: {
-      external: [], // no external packages are excluded
-    },
-    chunkSizeWarningLimit: 1500, // silence 500kB warnings
+    sourcemap: true,
+    commonjsOptions: { include: [/react-window/, /node_modules/] },
+    rollupOptions: { external: [] },
+    chunkSizeWarningLimit: 1500,
   },
-
   server: {
-    port: 5174, // your dev port (keep it)
+    port: 5174,
     open: true,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:8000", // FastAPI backend
+        target: "http://127.0.0.1:8000",
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api/, ""),
+        rewrite: (p) => p.replace(/^\/api/, ""),
       },
     },
   },

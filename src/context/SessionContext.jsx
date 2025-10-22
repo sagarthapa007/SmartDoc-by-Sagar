@@ -1,38 +1,61 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 
-// ✅ Unified Session Context (Dataset + Route + Future Expansion)
-const SessionCtx = createContext(null);
+// Create context
+const SessionContext = createContext();
 
+/**
+ * 🧭 SmartDoc Session Context
+ * Stores the active dataset, user state, and session metadata.
+ */
 export function SessionProvider({ children }) {
-  const [session, setSession] = useState({
-    dataset: null,  // uploaded dataset
-    doc: null,      // parsed document
-    files: [],      // multi-upload future use
-    filters: [],    // active filters
-    meta: null,     // file info
+  const [session, setSessionState] = useState({
+    dataset: null,
+    user: null,
+    meta: {},
   });
 
-  // 🧭 Manage active route ("upload" | "analyze" | "reports" etc.)
-  const [route, setRoute] = useState("upload");
+  // Enhanced setSession that handles both object and function updates
+  const setSession = (update) => {
+    if (typeof update === 'function') {
+      setSessionState(prev => {
+        const newSession = update(prev);
+        console.log('🔄 Session updated (function):', newSession);
+        return newSession;
+      });
+    } else {
+      console.log('🔄 Session updated (object):', update);
+      setSessionState(update);
+    }
+  };
 
-  const value = useMemo(
-    () => ({
-      session,
-      setSession,
-      route,
-      setRoute,
-    }),
-    [session, route]
+  const value = {
+    session,
+    setSession,
+  };
+
+  return (
+    <SessionContext.Provider value={value}>
+      {children}
+    </SessionContext.Provider>
   );
-
-  return <SessionCtx.Provider value={value}>{children}</SessionCtx.Provider>;
 }
 
+// Custom hook
 export function useSession() {
-  const ctx = useContext(SessionCtx);
-  if (!ctx) {
-    console.warn("⚠️ useSession called outside provider");
-    return { session: {}, setSession: () => {}, route: "upload", setRoute: () => {} };
+  const context = useContext(SessionContext);
+  
+  if (!context) {
+    console.error('❌ useSession called outside SessionProvider');
+    throw new Error("useSession must be used within a SessionProvider");
   }
-  return ctx;
+  
+  console.log('🎯 useSession returning:', { 
+    session: context.session, 
+    hasSetSession: !!context.setSession 
+  });
+  
+  return context;
 }
+
+// Default export
+export default SessionContext;

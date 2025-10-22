@@ -1,14 +1,10 @@
 import React from "react";
-
-export default function History() {
+export default function History(){
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-2">History</h1>
-      <p className="text-sm text-[var(--text-muted)]">
-        Your analysis and document generation history will appear here.
-      </p>
-      <div className="mt-4 card p-4">
-        <p className="text-sm">Coming soon: persisted runs, filters, CSV/PDF export.</p>
+    <div className="section">
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-2">Collaboration & Automate</h2>
+        <p>Workflow history and automations coming soon.</p>
       </div>
     </div>
   );
