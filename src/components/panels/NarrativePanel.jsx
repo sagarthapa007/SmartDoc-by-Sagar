@@ -8,10 +8,13 @@ export default function NarrativePanel({ insights }) {
     <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-50">
       <h3 className="text-blue-700 font-semibold mb-2">AI Narrative</h3>
       <p className="text-gray-700 text-sm leading-relaxed">
-        The dataset contains <b>{technical?.summary?.rowCount ?? "—"}</b> records and{" "}
-        <b>{technical?.summary?.colCount ?? "—"}</b> fields.
+        The dataset contains <b>{technical?.summary?.rowCount ?? "—"}</b>{" "}
+        records and <b>{technical?.summary?.colCount ?? "—"}</b> fields.
         {business?.context?.dataType && (
-          <> It appears to represent <b>{business.context.dataType}</b> data.</>
+          <>
+            {" "}
+            It appears to represent <b>{business.context.dataType}</b> data.
+          </>
         )}{" "}
         Overall data quality is <b>{quality?.overall ?? "—"}%</b>.
       </p>

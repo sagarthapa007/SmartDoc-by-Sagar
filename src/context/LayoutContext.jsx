@@ -1,5 +1,11 @@
 // src/context/LayoutContext.jsx
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 const LayoutCtx = createContext(null);
 
@@ -14,7 +20,10 @@ export function LayoutProvider({ children }) {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const value = useMemo(() => ({ sidebarOpen, setSidebarOpen, isDesktop }), [sidebarOpen, isDesktop]);
+  const value = useMemo(
+    () => ({ sidebarOpen, setSidebarOpen, isDesktop }),
+    [sidebarOpen, isDesktop],
+  );
   return <LayoutCtx.Provider value={value}>{children}</LayoutCtx.Provider>;
 }
 

@@ -33,7 +33,10 @@ const FEATURE_INDEX = {
     overview:
       "Turn each row in your spreadsheet into a personalized document with placeholders and conditional logic.",
     bullets: ["PDF/Word export", "Bulk creation", "Email delivery (soon)"],
-    tips: ["Use {{placeholders}} in your templates.", "Preview before bulk runs."],
+    tips: [
+      "Use {{placeholders}} in your templates.",
+      "Preview before bulk runs.",
+    ],
   },
   ai: {
     title: "AI Assistant",
@@ -70,7 +73,10 @@ export default function FeatureDetail() {
             The feature you’re looking for doesn’t exist. Go back and try again.
           </p>
           <div className="mt-4">
-            <Link to="/" className="btn btn-primary inline-flex items-center gap-2">
+            <Link
+              to="/"
+              className="btn btn-primary inline-flex items-center gap-2"
+            >
               <ArrowLeft size={16} /> Back to home
             </Link>
           </div>
@@ -85,7 +91,10 @@ export default function FeatureDetail() {
         <Link to="/" className="btn btn-ghost inline-flex items-center gap-2">
           <ArrowLeft size={16} /> Home
         </Link>
-        <Link to={feat.route} className="btn btn-primary inline-flex items-center gap-2">
+        <Link
+          to={feat.route}
+          className="btn btn-primary inline-flex items-center gap-2"
+        >
           Try {feat.title} <ArrowRight size={16} />
         </Link>
       </div>
@@ -97,7 +106,9 @@ export default function FeatureDetail() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">{feat.title}</h1>
-            <p className="text-sm text-[var(--text-secondary)]">{feat.overview}</p>
+            <p className="text-sm text-[var(--text-secondary)]">
+              {feat.overview}
+            </p>
           </div>
         </div>
 
@@ -106,7 +117,9 @@ export default function FeatureDetail() {
             <div className="font-semibold mb-2">What you can do</div>
             <ul className="space-y-2">
               {feat.bullets.map((b, i) => (
-                <li key={i} className="text-sm">• {b}</li>
+                <li key={i} className="text-sm">
+                  • {b}
+                </li>
               ))}
             </ul>
           </div>
@@ -114,15 +127,19 @@ export default function FeatureDetail() {
             <div className="font-semibold mb-2">Quick tips</div>
             <ul className="space-y-2">
               {feat.tips.map((t, i) => (
-                <li key={i} className="text-sm">• {t}</li>
+                <li key={i} className="text-sm">
+                  • {t}
+                </li>
               ))}
             </ul>
           </div>
         </div>
 
         {/* Placeholder for future screenshots/illustrations */}
-        <div className="mt-6 p-6 rounded-xl border text-center text-sm text-[var(--text-secondary)]"
-             style={{ borderColor: "var(--border)" }}>
+        <div
+          className="mt-6 p-6 rounded-xl border text-center text-sm text-[var(--text-secondary)]"
+          style={{ borderColor: "var(--border)" }}
+        >
           Add an illustration or short GIF here (workflow / UI preview).
         </div>
       </div>

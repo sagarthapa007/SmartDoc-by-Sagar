@@ -1,12 +1,16 @@
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
+
 
 class AnalyzeOptions(BaseModel):
     max_cells: int = Field(200000)
 
+
 class AnalyzeRequest(BaseModel):
     rows: List[Dict[str, Any]] = []
     options: AnalyzeOptions = AnalyzeOptions()
+
 
 class Summary(BaseModel):
     rows: int
@@ -14,6 +18,7 @@ class Summary(BaseModel):
     numericColumns: int
     categoricalColumns: int
     dateColumns: int
+
 
 class NumericStat(BaseModel):
     column: str
@@ -27,18 +32,34 @@ class NumericStat(BaseModel):
     iqr: Optional[float] = None
     outliers: int
 
+
 class TopCategory(BaseModel):
-    value: str; count: int; pct: float
+    value: str
+    count: int
+    pct: float
+
 
 class CategoricalStat(BaseModel):
-    column: str; total: int; uniques: int; dominant: float; top5: List[TopCategory]
+    column: str
+    total: int
+    uniques: int
+    dominant: float
+    top5: List[TopCategory]
+
 
 class Correlation(BaseModel):
-    a: str; b: str; r: float
+    a: str
+    b: str
+    r: float
+
 
 class Insight(BaseModel):
-    id: str; type: str; title: str; detail: str
+    id: str
+    type: str
+    title: str
+    detail: str
     severity: Optional[str] = None
+
 
 class AnalyzeResponse(BaseModel):
     summary: Summary

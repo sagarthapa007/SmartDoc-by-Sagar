@@ -60,9 +60,7 @@ export default function LoginModal() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Email
-                </label>
+                <label className="block text-sm font-medium mb-1">Email</label>
                 <input
                   type="email"
                   className="w-full px-3 py-2 border rounded-xl bg-transparent focus:ring-2 focus:ring-blue-500"
@@ -88,9 +86,7 @@ export default function LoginModal() {
               </div>
 
               {error && (
-                <div className="text-red-500 text-sm text-center">
-                  {error}
-                </div>
+                <div className="text-red-500 text-sm text-center">{error}</div>
               )}
 
               <button
@@ -101,8 +97,8 @@ export default function LoginModal() {
                 {loading
                   ? "Please wait..."
                   : isRegister
-                  ? "Sign Up"
-                  : "Sign In"}
+                    ? "Sign Up"
+                    : "Sign In"}
               </button>
 
               <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-2">

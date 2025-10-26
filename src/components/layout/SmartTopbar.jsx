@@ -1,8 +1,16 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Menu, Search, Bell, Sun, Moon, Sparkles,
-  ChevronDown, Crown, LogOut, LogIn
+  Menu,
+  Search,
+  Bell,
+  Sun,
+  Moon,
+  Sparkles,
+  ChevronDown,
+  Crown,
+  LogOut,
+  LogIn,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext.jsx";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -15,7 +23,12 @@ export default function SmartTopbar({ onMenu }) {
   const [searchActive, setSearchActive] = useState(false);
 
   const firstName = user?.name || user?.full_name || "Guest";
-  const initials = (firstName || "G").split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
+  const initials = (firstName || "G")
+    .split(" ")
+    .map((s) => s[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <motion.header
@@ -38,7 +51,10 @@ export default function SmartTopbar({ onMenu }) {
         </button>
 
         {/* Brand */}
-        <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => navigate("/")}>
+        <div
+          className="flex items-center gap-3 cursor-pointer select-none"
+          onClick={() => navigate("/")}
+        >
           <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--brand1)] to-[var(--accent)] flex items-center justify-center shadow-lg">
             <Sparkles size={20} className="text-white" />
             <motion.div
@@ -49,7 +65,10 @@ export default function SmartTopbar({ onMenu }) {
           </div>
           <div className="hidden sm:block leading-tight">
             <h1 className="text-lg font-bold text-gradient">SmartDoc</h1>
-            <p className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>
+            <p
+              className="text-[11px]"
+              style={{ color: "var(--text-tertiary)" }}
+            >
               Enterprise Suite
             </p>
           </div>
@@ -112,11 +131,19 @@ export default function SmartTopbar({ onMenu }) {
               {initials}
             </div>
             <div className="hidden lg:block text-left">
-              <div className="text-sm font-medium flex items-center gap-1.5" style={{ color: "var(--text)" }}>
+              <div
+                className="text-sm font-medium flex items-center gap-1.5"
+                style={{ color: "var(--text)" }}
+              >
                 {firstName.split(" ")[0]}
-                {user?.plan === "Pro" && <Crown size={12} className="text-amber-500" />}
+                {user?.plan === "Pro" && (
+                  <Crown size={12} className="text-amber-500" />
+                )}
               </div>
-              <div className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+              <div
+                className="text-xs"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 {user?.plan || "Free"}
               </div>
             </div>

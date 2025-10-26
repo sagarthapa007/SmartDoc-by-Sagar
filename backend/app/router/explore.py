@@ -1,9 +1,9 @@
-
-from fastapi import APIRouter, HTTPException
 from app.models.schemas import ExploreRequest, ExploreResponse
 from app.services.query_builder import run_explore_query
+from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
+
 
 @router.post("/explore", response_model=ExploreResponse)
 async def explore(req: ExploreRequest):

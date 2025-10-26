@@ -1,0 +1,102 @@
+# =====================================================
+# ☁️ SMARTDOC ENTERPRISE - RENDER DEPLOYMENT IGNORE FILE
+# Purpose: Reduce build size and keep backend deployment clean
+# Applies only to Render build context
+# Updated: 2025-10-26
+# =====================================================
+
+# === 🧠 Frontend (Vercel handles it) ===
+node_modules/
+dist/
+build/
+src/
+public/
+vite.config.*
+package.json
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+tailwind.config.*
+postcss.config.*
+tsconfig.*
+*.jsx
+*.tsx
+*.js
+*.ts
+*.css
+*.html
+
+# === ⚙️ Development & Local Files ===
+.vscode/
+.idea/
+.history/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.swp
+*.swo
+*.bak
+
+# === 🧾 Docs, Drafts & Samples ===
+docs/
+drafts/
+samples/
+screenshots/
+designs/
+reports/
+
+# === 🧪 Tests & Coverage ===
+tests/
+backend/tests/
+coverage/
+.pytest_cache/
+.htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.pyre/
+test_output/
+
+# === 🧰 Python Virtual Environments ===
+backend/.venv/
+backend/venv/
+backend/env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# === 🧩 Temporary & Runtime ===
+backend/uploads/
+backend/temp/
+backend/runtime/
+tmp/
+temp/
+logs/
+__logs__/
+nohup.out
+*.log
+*.out
+
+# === ☁️ Configurations not needed for build ===
+render.yaml
+docker-compose.yml
+Dockerfile
+*.dockerfile
+*.dockerignore
+
+# === 🔐 Environment Files ===
+.env
+.env.*
+backend/.env
+backend/.env.*
+supabase/.env
+supabase/config.json
+supabase/.temp/
+
+# === 🧠 ML Cache ===
+backend/app/ml/data_type_model.pkl
+backend/app/ml/model_cache.pkl
+backend/app/ml/__pycache__/
+backend/app/intelligence/__pycache__/

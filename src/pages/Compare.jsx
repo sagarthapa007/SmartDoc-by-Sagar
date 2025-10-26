@@ -1,1 +1,3 @@
-export default function Compare(){return <div className='card'>Comparison workspace (Phase 2A)</div>}
+export default function Compare() {
+  return <div className="card">Comparison workspace (Phase 2A)</div>;
+}

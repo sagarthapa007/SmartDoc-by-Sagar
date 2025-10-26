@@ -4,8 +4,7 @@
  * Handles: upload, detect, analyze, explore, actions, narrate, auth, and offline fallbacks.
  */
 
-const API_BASE =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "/api";
+const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "/api";
 
 /**
  * Universal request wrapper with auth and JSON handling
@@ -62,7 +61,10 @@ export async function detectData(dataset) {
  * 📊 Analyze Data (Persona + Domain aware)
  * Sends dataset with context to backend for statistical analysis.
  */
-export async function analyzeData(data, context = { persona: "manager", data_type: "generic_dataset" }) {
+export async function analyzeData(
+  data,
+  context = { persona: "manager", data_type: "generic_dataset" },
+) {
   return request("/analyze", "POST", {
     headers: data.headers,
     rows: data.rows || [],
@@ -136,7 +138,9 @@ export const offlineFallbacks = {
   },
   narrateLocally: async (data) => {
     console.warn("⚠️ Backend unreachable — using local summarizer.");
-    const { generateNarrative: localSummarizer } = await import("@utils/insightEngine.js");
+    const { generateNarrative: localSummarizer } = await import(
+      "@utils/insightEngine.js"
+    );
     return { success: true, summary: localSummarizer(data) };
   },
 };

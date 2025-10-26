@@ -1,7 +1,8 @@
 # =====================================================
 # 🚀 SMARTDOC ENTERPRISE - FULL PROJECT .gitignore
 # Covers: Frontend (Vite/React) + Backend (FastAPI)
-# Updated: 2025-10-22
+# Optimized for: Vercel + Render + Supabase
+# Updated: 2025-10-26
 # =====================================================
 
 # === 📦 Node / Vite Frontend ===
@@ -15,12 +16,16 @@ build/
 .vercel/
 .vscode/
 coverage/
-*.lock
 *.log
 *.pid
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+# Keep one lock file for reproducible builds
+# (uncomment if you want deterministic builds)
+# package-lock.json
+# pnpm-lock.yaml
+# yarn.lock
 
 # === ⚙️ Environment & Config Files ===
 .env
@@ -90,7 +95,8 @@ dist/
 
 # === ☁️ Render / Deployment / Docker ===
 .render/
-render.yaml
+# Keep render.yaml tracked only if you use custom Render build config
+# render.yaml
 Dockerfile
 docker-compose.yml
 *.dockerfile
@@ -140,7 +146,7 @@ test_output/
 .sublime-workspace
 .code-workspace
 
-# === 🗂️ Temporary or local assets ===
+# === 🗂️ Temporary or Local Assets ===
 backend/test_*.json
 samples/
 drafts/

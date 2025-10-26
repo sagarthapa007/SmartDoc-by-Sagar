@@ -32,9 +32,9 @@ export default function Home() {
         transition={{ delay: 0.2 }}
         className="max-w-2xl text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-10"
       >
-        Your unified workspace for <strong>data intelligence</strong>, 
-        <strong> document automation</strong>, and <strong>AI analytics</strong>.  
-        Upload, explore, and visualize your insights — all in one click.
+        Your unified workspace for <strong>data intelligence</strong>,
+        <strong> document automation</strong>, and <strong>AI analytics</strong>
+        . Upload, explore, and visualize your insights — all in one click.
       </motion.p>
 
       {/* Action Buttons */}
@@ -102,7 +102,8 @@ export default function Home() {
         transition={{ delay: 0.6 }}
         className="mt-20 text-sm text-gray-400"
       >
-        © {new Date().getFullYear()} SmartDoc : Inspired by Kiran Paudel, Developed by Sagar
+        © {new Date().getFullYear()} SmartDoc : Inspired by Kiran Paudel,
+        Developed by Sagar
       </motion.footer>
     </motion.div>
   );

@@ -1,37 +1,55 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useAnalyzeStore } from "@/store/analyze.store.jsx";
 
-// Create context
 const SessionContext = createContext();
 
-/**
- * 🧭 SmartDoc Session Context
- * Stores the active dataset, user state, and session metadata.
- */
 export function SessionProvider({ children }) {
   const [session, setSessionState] = useState({
     dataset: null,
+    analysis: null,
     user: null,
     meta: {},
   });
 
-  // Enhanced setSession that handles both object and function updates
+  const { dataset, analysis } = useAnalyzeStore();
+
+  // ✅ Automatically mirror Zustand → Context
+  useEffect(() => {
+    if (dataset) {
+      setSessionState((prev) => ({
+        ...prev,
+        dataset,
+      }));
+    }
+  }, [dataset]);
+
+  useEffect(() => {
+    if (analysis) {
+      setSessionState((prev) => ({
+        ...prev,
+        analysis,
+      }));
+    }
+  }, [analysis]);
+
   const setSession = (update) => {
-    if (typeof update === 'function') {
-      setSessionState(prev => {
+    if (typeof update === "function") {
+      setSessionState((prev) => {
         const newSession = update(prev);
-        console.log('🔄 Session updated (function):', newSession);
-        return newSession;
+        console.log("🔄 Session updated (function):", newSession);
+        return { ...prev, ...newSession };
       });
     } else {
-      console.log('🔄 Session updated (object):', update);
-      setSessionState(update);
+      console.log("🔄 Session updated (object):", update);
+      setSessionState((prev) => ({ ...prev, ...update }));
     }
   };
 
-  const value = {
-    session,
-    setSession,
-  };
+  useEffect(() => {
+    console.log("🧠 Current Session:", session);
+  }, [session]);
+
+  const value = { session, setSession };
 
   return (
     <SessionContext.Provider value={value}>
@@ -40,22 +58,10 @@ export function SessionProvider({ children }) {
   );
 }
 
-// Custom hook
 export function useSession() {
   const context = useContext(SessionContext);
-  
-  if (!context) {
-    //console.error('❌ useSession called outside SessionProvider');
-    throw new Error("useSession must be used within a SessionProvider");
-  }
-  
-  //console.log('🎯 useSession returning:', { 
-  //  session: context.session, 
-  //  hasSetSession: !!context.setSession 
-  //});
-  
-  return context; // ✅ FIX: Uncomment this line!
+  if (!context) throw new Error("useSession must be used within a SessionProvider");
+  return context;
 }
 
-// Default export
 export default SessionContext;

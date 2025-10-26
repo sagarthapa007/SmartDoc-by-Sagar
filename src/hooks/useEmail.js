@@ -1,1 +1,3 @@
-export function useEmail(){ return { send: ()=>{} } }
+export function useEmail() {
+  return { send: () => {} };
+}

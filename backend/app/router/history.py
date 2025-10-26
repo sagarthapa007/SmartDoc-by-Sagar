@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from pathlib import Path
 import json
 from datetime import datetime
+from pathlib import Path
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -11,11 +12,13 @@ DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
 if not DATA_FILE.exists():
     DATA_FILE.write_text(json.dumps({"items": []}, ensure_ascii=False, indent=2), encoding="utf-8")
 
+
 class HistoryItem(BaseModel):
     title: str | None = None
     filename: str | None = None
     summary: str | None = None
     when: str | None = None
+
 
 @router.get("")
 def list_history():
@@ -24,6 +27,7 @@ def list_history():
         return data
     except Exception as e:
         raise HTTPException(500, f"Failed to read history: {e}")
+
 
 @router.post("")
 def add_history(item: HistoryItem):

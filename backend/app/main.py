@@ -1,12 +1,14 @@
+import json
+import logging
+import socket
+
+import numpy as np
+from app.config import settings
 from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
-from app.config import settings
-import json
-import numpy as np
-import socket
-import logging
+from starlette.middleware.cors import CORSMiddleware
+
 
 # ============================================================
 # 🧩 Safe JSON Response — prevents NaN / Inf serialization errors
@@ -18,6 +20,7 @@ class SafeJSONResponse(JSONResponse):
                 if np.isnan(obj) or np.isinf(obj):
                     return None
             return obj
+
         return json.dumps(content, default=safe_json_default, allow_nan=False).encode("utf-8")
 
 
@@ -28,7 +31,7 @@ app = FastAPI(
     title="SmartDoc Enterprise API",
     version="6.3",
     description="Backend API powering SmartDoc data intelligence suite.",
-    default_response_class=SafeJSONResponse
+    default_response_class=SafeJSONResponse,
 )
 
 
@@ -60,17 +63,18 @@ print("🧩 API Base URL:", settings.API_BASE_URL)
 print("🌐 Environment variables loaded successfully ✅")
 
 
+from app.router.analyze import router as analyze_router
+from app.router.auth_routes import router as auth_router
+from app.router.correlate_routes import router as correlate_router
+from app.router.explore_routes import router as explore_router
+from app.router.history import router as history_router
+from app.router.intelligence import router as intelligence_router
+
 # ============================================================
 # 🔌 Import & Register All Routers
 # ============================================================
 from app.router.upload import router as upload_router
-from app.router.analyze import router as analyze_router
-from app.router.explore_routes import router as explore_router
-from app.router.intelligence import router as intelligence_router
-from app.router.history import router as history_router
-from app.router.auth_routes import router as auth_router
 from app.router.users_routes import router as users_router
-from app.router.correlate_routes import router as correlate_router
 
 routers = [
     (upload_router, "Upload"),
@@ -101,7 +105,7 @@ def debug_config():
         "supabase_url": settings.SUPABASE_URL,
         "api_base_url": settings.API_BASE_URL,
         "allowed_origins": settings.allowed_origins_list,
-        "connected": True
+        "connected": True,
     }
 
 
@@ -113,7 +117,7 @@ def root():
     return {
         "app": "SmartDoc Enterprise",
         "version": "6.3",
-        "message": "Backend running successfully ✅"
+        "message": "Backend running successfully ✅",
     }
 
 
@@ -121,6 +125,7 @@ def root():
 # 🧭 Route Inspector — Auto-prints all API routes on startup
 # ============================================================
 logger = logging.getLogger("uvicorn")
+
 
 @app.on_event("startup")
 async def print_registered_routes():

@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import Any, Dict, List, Optional
-import pandas as pd
-import numpy as np
 import math
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+import pandas as pd
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 router = APIRouter(tags=["Analyze"])
 
@@ -12,6 +13,7 @@ router = APIRouter(tags=["Analyze"])
 # ⚙️ Version Constant
 # ============================================================
 ENGINE_VERSION = "7.0.1"
+
 
 # ============================================================
 # 🧠 Data Models
@@ -89,7 +91,11 @@ def _detect_dataset_patterns(df: pd.DataFrame) -> List[str]:
 
     num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     cat_cols = df.select_dtypes(include=["object"]).columns.tolist()
-    date_cols = [c for c in df.columns if any(k in c.lower() for k in ["date", "time", "year", "month", "day"])]
+    date_cols = [
+        c
+        for c in df.columns
+        if any(k in c.lower() for k in ["date", "time", "year", "month", "day"])
+    ]
 
     if len(num_cols) > len(cat_cols):
         patterns.append("Numeric-dominated dataset suitable for statistical modeling")
@@ -150,7 +156,11 @@ def _generate_advanced_charts(df: pd.DataFrame) -> List[Dict[str, Any]]:
     try:
         num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         cat_cols = df.select_dtypes(include=["object"]).columns.tolist()
-        date_cols = [c for c in df.columns if any(k in c.lower() for k in ["date", "time", "year", "month", "day"])]
+        date_cols = [
+            c
+            for c in df.columns
+            if any(k in c.lower() for k in ["date", "time", "year", "month", "day"])
+        ]
 
         # Stop if no numeric columns
         if not num_cols and not cat_cols:
@@ -161,24 +171,28 @@ def _generate_advanced_charts(df: pd.DataFrame) -> List[Dict[str, Any]]:
             if df[col].nunique() > 1:
                 hist = pd.cut(df[col], bins=min(10, df[col].nunique()))
                 counts = hist.value_counts().sort_index()
-                charts.append({
-                    "type": "bar",
-                    "title": f"Distribution of {col}",
-                    "labels": [str(x) for x in counts.index],
-                    "values": counts.values.tolist(),
-                    "color": "#3b82f6"
-                })
+                charts.append(
+                    {
+                        "type": "bar",
+                        "title": f"Distribution of {col}",
+                        "labels": [str(x) for x in counts.index],
+                        "values": counts.values.tolist(),
+                        "color": "#3b82f6",
+                    }
+                )
 
         # Pie for categorical
         for col in cat_cols[:2]:
             if df[col].nunique() <= 15:
                 counts = df[col].value_counts().head(10)
-                charts.append({
-                    "type": "pie",
-                    "title": f"Composition of {col}",
-                    "labels": counts.index.astype(str).tolist(),
-                    "values": counts.values.tolist()
-                })
+                charts.append(
+                    {
+                        "type": "pie",
+                        "title": f"Composition of {col}",
+                        "labels": counts.index.astype(str).tolist(),
+                        "values": counts.values.tolist(),
+                    }
+                )
 
         # Correlation heatmap summary
         if len(num_cols) >= 3:
@@ -186,19 +200,23 @@ def _generate_advanced_charts(df: pd.DataFrame) -> List[Dict[str, Any]]:
             pairs = []
             for i in range(len(corr.columns)):
                 for j in range(i + 1, len(corr.columns)):
-                    pairs.append({
-                        "pair": f"{corr.columns[i]} vs {corr.columns[j]}",
-                        "corr": round(corr.iloc[i, j], 3)
-                    })
+                    pairs.append(
+                        {
+                            "pair": f"{corr.columns[i]} vs {corr.columns[j]}",
+                            "corr": round(corr.iloc[i, j], 3),
+                        }
+                    )
             pairs = sorted(pairs, key=lambda x: abs(x["corr"]), reverse=True)[:8]
             if pairs:
-                charts.append({
-                    "type": "bar",
-                    "title": "Top Variable Correlations",
-                    "labels": [p["pair"] for p in pairs],
-                    "values": [p["corr"] for p in pairs],
-                    "color": "#10b981"
-                })
+                charts.append(
+                    {
+                        "type": "bar",
+                        "title": "Top Variable Correlations",
+                        "labels": [p["pair"] for p in pairs],
+                        "values": [p["corr"] for p in pairs],
+                        "color": "#10b981",
+                    }
+                )
 
         # Time-series
         for dc in date_cols[:1]:
@@ -210,13 +228,15 @@ def _generate_advanced_charts(df: pd.DataFrame) -> List[Dict[str, Any]]:
                     df_t["month"] = df_t[dc].dt.to_period("M")
                     avg = df_t.groupby("month")[num_cols[0]].mean().reset_index()
                     avg["month"] = avg["month"].astype(str)
-                    charts.append({
-                        "type": "line",
-                        "title": f"Monthly Trend of {num_cols[0]}",
-                        "labels": avg["month"].tolist(),
-                        "values": avg[num_cols[0]].round(2).tolist(),
-                        "color": "#8b5cf6"
-                    })
+                    charts.append(
+                        {
+                            "type": "line",
+                            "title": f"Monthly Trend of {num_cols[0]}",
+                            "labels": avg["month"].tolist(),
+                            "values": avg[num_cols[0]].round(2).tolist(),
+                            "color": "#8b5cf6",
+                        }
+                    )
                 except Exception:
                     pass
 
@@ -224,13 +244,15 @@ def _generate_advanced_charts(df: pd.DataFrame) -> List[Dict[str, Any]]:
         missing = df.isna().sum()
         missing = missing[missing > 0].sort_values(ascending=False).head(8)
         if not missing.empty:
-            charts.append({
-                "type": "bar",
-                "title": "Missing Values by Column",
-                "labels": missing.index.tolist(),
-                "values": missing.values.tolist(),
-                "color": "#ef4444"
-            })
+            charts.append(
+                {
+                    "type": "bar",
+                    "title": "Missing Values by Column",
+                    "labels": missing.index.tolist(),
+                    "values": missing.values.tolist(),
+                    "color": "#ef4444",
+                }
+            )
 
         # Outlier detection
         for col in num_cols[:1]:
@@ -240,16 +262,25 @@ def _generate_advanced_charts(df: pd.DataFrame) -> List[Dict[str, Any]]:
                 lower, upper = Q1 - 1.5 * IQR, Q3 + 1.5 * IQR
                 outliers = df[(df[col] < lower) | (df[col] > upper)]
                 if len(outliers) > 0:
-                    charts.append({
-                        "type": "bar",
-                        "title": f"Outlier Analysis - {col}",
-                        "labels": ["Normal", "Outliers"],
-                        "values": [len(df) - len(outliers), len(outliers)],
-                        "color": "#f59e0b"
-                    })
+                    charts.append(
+                        {
+                            "type": "bar",
+                            "title": f"Outlier Analysis - {col}",
+                            "labels": ["Normal", "Outliers"],
+                            "values": [len(df) - len(outliers), len(outliers)],
+                            "color": "#f59e0b",
+                        }
+                    )
 
     except Exception as e:
-        charts.append({"type": "info", "title": "Chart Generation Error", "labels": ["error"], "values": [str(e)]})
+        charts.append(
+            {
+                "type": "info",
+                "title": "Chart Generation Error",
+                "labels": ["error"],
+                "values": [str(e)],
+            }
+        )
     return charts
 
 
@@ -258,14 +289,18 @@ def _generate_comprehensive_insights(df: pd.DataFrame, scrutiny: Dict[str, Any])
     insights = []
     if df.empty:
         ft = scrutiny.get("file_type", "unknown")
-        return [f"No structured data detected for {ft.upper()} file. Use Intelligence module for text insights."]
+        return [
+            f"No structured data detected for {ft.upper()} file. Use Intelligence module for text insights."
+        ]
 
     try:
         n_rows, n_cols = df.shape
         num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         cat_cols = df.select_dtypes(include=["object"]).columns.tolist()
 
-        insights.append(f"Dataset contains {n_rows:,} records and {n_cols} fields ({len(num_cols)} numeric, {len(cat_cols)} categorical).")
+        insights.append(
+            f"Dataset contains {n_rows:,} records and {n_cols} fields ({len(num_cols)} numeric, {len(cat_cols)} categorical)."
+        )
 
         miss = (df.isna().sum().sum() / (n_rows * n_cols)) * 100
         if miss > 20:
@@ -303,7 +338,7 @@ def _generate_strategic_recommendations(df: pd.DataFrame, scrutiny: Dict[str, An
             return [
                 "Use the Intelligence module for text summarization and entity extraction.",
                 "Generate executive summaries from document content.",
-                "Apply sentiment or topic classification if applicable."
+                "Apply sentiment or topic classification if applicable.",
             ]
         else:
             return ["Upload structured data (CSV, Excel, JSON) for analytics."]
@@ -356,10 +391,10 @@ async def analyze(request: AnalyzeRequest):
                     "col_count": 0,
                     "analysis_timestamp": datetime.utcnow().isoformat(),
                     "data_quality_score": 0,
-                    "processing_time_ms": 0
+                    "processing_time_ms": 0,
                 },
                 "status": "success",
-                "analysis_type": "document"
+                "analysis_type": "document",
             }
         else:
             quality = _calculate_data_quality_score(df)
@@ -382,16 +417,19 @@ async def analyze(request: AnalyzeRequest):
                     "col_count": int(df.shape[1]),
                     "analysis_timestamp": datetime.utcnow().isoformat(),
                     "data_quality_score": quality,
-                    "processing_time_ms": int(proc_time)
+                    "processing_time_ms": int(proc_time),
                 },
                 "status": "success",
-                "analysis_type": "tabular"
+                "analysis_type": "tabular",
             }
 
-        print(f"✅ Analysis completed for {request.upload_id} — {df.shape[0]} rows × {df.shape[1]} cols ({file_type})")
+        print(
+            f"✅ Analysis completed for {request.upload_id} — {df.shape[0]} rows × {df.shape[1]} cols ({file_type})"
+        )
         return _sanitize_for_json(result)
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Analysis failed: {e}")

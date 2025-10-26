@@ -1,7 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function HeaderConfirmBanner({ detection, headers, onChangeHeader, onDismiss }) {
+export default function HeaderConfirmBanner({
+  detection,
+  headers,
+  onChangeHeader,
+  onDismiss,
+}) {
   const [showPicker, setShowPicker] = useState(false);
   if (!detection) return null;
 
@@ -41,7 +46,7 @@ export default function HeaderConfirmBanner({ detection, headers, onChangeHeader
   const showHeaders = useMemo(() => {
     const raw = headers?.length
       ? headers
-      : lines[headerIndex]?.split(/[,\t|;]/).map((h) => h.trim()) ?? [];
+      : (lines[headerIndex]?.split(/[,\t|;]/).map((h) => h.trim()) ?? []);
     return raw.slice(0, 6);
   }, [headers, lines, headerIndex]);
 
@@ -170,7 +175,7 @@ export default function HeaderConfirmBanner({ detection, headers, onChangeHeader
                     {(lines || []).slice(0, 10).map((line, idx) => {
                       const isSelected = idx === headerIndex;
                       const altScore = alternatives.find(
-                        (a) => a.index === idx
+                        (a) => a.index === idx,
                       )?.score;
                       return (
                         <button

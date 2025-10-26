@@ -13,7 +13,9 @@ export default function SmartLayout() {
     const v = localStorage.getItem(LS_PIN_KEY);
     return v ? JSON.parse(v) : true;
   });
-  const [side, setSide] = useState(() => localStorage.getItem(LS_SIDE_KEY) || "left");
+  const [side, setSide] = useState(
+    () => localStorage.getItem(LS_SIDE_KEY) || "left",
+  );
 
   useEffect(() => {
     localStorage.setItem(LS_PIN_KEY, JSON.stringify(pinned));
@@ -26,15 +28,19 @@ export default function SmartLayout() {
     <div className="min-h-screen flex flex-col">
       <SmartTopbar onMenu={() => setMobileOpen(true)} />
 
-      <div className={`flex-1 grid ${side === "left" ? "grid-cols-[auto,1fr]" : "grid-cols-[1fr,auto]"} gap-0`}>
+      <div
+        className={`flex-1 grid ${side === "left" ? "grid-cols-[auto,1fr]" : "grid-cols-[1fr,auto]"} gap-0`}
+      >
         {/* Desktop sidebar */}
         {side === "left" && (
           <div className="hidden lg:block">
             <SmartSidebar
               side={side}
               pinned={pinned}
-              onTogglePin={() => setPinned(v => !v)}
-              onSwitchSide={() => setSide(s => (s === "left" ? "right" : "left"))}
+              onTogglePin={() => setPinned((v) => !v)}
+              onSwitchSide={() =>
+                setSide((s) => (s === "left" ? "right" : "left"))
+              }
             />
           </div>
         )}
@@ -51,8 +57,10 @@ export default function SmartLayout() {
             <SmartSidebar
               side={side}
               pinned={pinned}
-              onTogglePin={() => setPinned(v => !v)}
-              onSwitchSide={() => setSide(s => (s === "left" ? "right" : "left"))}
+              onTogglePin={() => setPinned((v) => !v)}
+              onSwitchSide={() =>
+                setSide((s) => (s === "left" ? "right" : "left"))
+              }
             />
           </div>
         )}
@@ -80,7 +88,9 @@ export default function SmartLayout() {
                 side={side}
                 pinned={true}
                 onTogglePin={() => {}}
-                onSwitchSide={() => setSide(s => (s === "left" ? "right" : "left"))}
+                onSwitchSide={() =>
+                  setSide((s) => (s === "left" ? "right" : "left"))
+                }
                 onNavigate={() => setMobileOpen(false)}
               />
             </motion.div>

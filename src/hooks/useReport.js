@@ -1,1 +1,3 @@
-export function useReport(){ return { build: ()=>{} } }
+export function useReport() {
+  return { build: () => {} };
+}

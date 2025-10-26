@@ -1,10 +1,10 @@
-
-from fastapi import APIRouter, HTTPException, Query
-from app.models.schemas import DeduplicateRequest, DeduplicatePreview
+from app.models.schemas import DeduplicatePreview, DeduplicateRequest
 from app.services.action_executor import ActionExecutor
+from fastapi import APIRouter, HTTPException, Query
 
 router = APIRouter()
 executor = ActionExecutor()
+
 
 @router.post("/deduplicate", response_model=DeduplicatePreview)
 async def deduplicate(req: DeduplicateRequest):

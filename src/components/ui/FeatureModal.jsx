@@ -1,7 +1,13 @@
 import React from "react";
 import { X, ArrowRight } from "lucide-react";
 
-export default function FeatureModal({ isOpen, feature, onClose, onTry, onLearn }) {
+export default function FeatureModal({
+  isOpen,
+  feature,
+  onClose,
+  onTry,
+  onLearn,
+}) {
   if (!isOpen || !feature) return null;
 
   const Icon = feature.icon;
@@ -19,18 +25,24 @@ export default function FeatureModal({ isOpen, feature, onClose, onTry, onLearn 
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-lg rounded-2xl border shadow-xl overflow-hidden"
-           style={{ background: "var(--card)", borderColor: "var(--border)" }}>
+      <div
+        className="relative w-full max-w-lg rounded-2xl border shadow-xl overflow-hidden"
+        style={{ background: "var(--card)", borderColor: "var(--border)" }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b"
-             style={{ borderColor: "var(--border)" }}>
+        <div
+          className="flex items-center justify-between p-4 border-b"
+          style={{ borderColor: "var(--border)" }}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--brand1)]/10 text-[var(--brand1)]">
               {Icon ? <Icon className="w-5 h-5" /> : null}
             </div>
             <div>
               <div className="text-base font-semibold">{feature.title}</div>
-              <div className="text-xs text-[var(--text-secondary)]">SmartDoc feature preview</div>
+              <div className="text-xs text-[var(--text-secondary)]">
+                SmartDoc feature preview
+              </div>
             </div>
           </div>
           <button className="kbd" onClick={onClose} aria-label="Close">
@@ -55,12 +67,17 @@ export default function FeatureModal({ isOpen, feature, onClose, onTry, onLearn 
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 p-4 border-t"
-             style={{ borderColor: "var(--border)" }}>
+        <div
+          className="flex items-center justify-end gap-2 p-4 border-t"
+          style={{ borderColor: "var(--border)" }}
+        >
           <button className="btn btn-ghost" onClick={onLearn}>
             Learn more
           </button>
-          <button className="btn btn-primary flex items-center gap-2" onClick={onTry}>
+          <button
+            className="btn btn-primary flex items-center gap-2"
+            onClick={onTry}
+          >
             Try feature <ArrowRight size={16} />
           </button>
         </div>

@@ -1,5 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
+
+from pydantic import BaseModel, EmailStr, Field
+
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -7,9 +9,11 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=6)
     role: str = "viewer"
 
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
 
 class UserOut(BaseModel):
     id: int
@@ -17,8 +21,10 @@ class UserOut(BaseModel):
     name: str
     role: str
     is_active: bool
+
     class Config:
         from_attributes = True
+
 
 class TokenOut(BaseModel):
     access_token: str

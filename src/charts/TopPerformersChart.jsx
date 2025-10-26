@@ -1,7 +1,18 @@
 import React from "react";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 
-export default function TopPerformersChart({ data, metric = "revenue", title = "Top Performers" }) {
+export default function TopPerformersChart({
+  data,
+  metric = "revenue",
+  title = "Top Performers",
+}) {
   if (!data?.length) return null;
   return (
     <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-50">

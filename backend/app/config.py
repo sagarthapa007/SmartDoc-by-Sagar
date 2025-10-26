@@ -1,5 +1,7 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     # 🌍 App URLs
@@ -22,13 +24,14 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        extra="allow"  # <-- this line prevents pydantic ValidationError
+        extra="allow",  # <-- this line prevents pydantic ValidationError
     )
 
     # 🧠 Derived property (returns list for FastAPI CORS)
     @property
     def allowed_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
+
 
 # ✅ Instantiate settings globally
 settings = Settings()

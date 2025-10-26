@@ -26,7 +26,9 @@ export default function DataStructurePanel({ schema = [] }) {
             <tr key={i} className="border-b">
               <td className="py-1">{col.name}</td>
               <td className="py-1 text-gray-500">{col.type ?? "—"}</td>
-              <td className="py-1">{col.uniqueCount ?? col.unique_count ?? "—"}</td>
+              <td className="py-1">
+                {col.uniqueCount ?? col.unique_count ?? "—"}
+              </td>
               <td className="py-1 text-gray-500">
                 {(col.examples ?? []).slice(0, 3).join(", ")}
               </td>

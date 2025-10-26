@@ -28,17 +28,19 @@ export function AuthProvider({ children }) {
     initializeAuth();
 
     // 🔁 Listen for auth changes
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, session) => {
-      setSession(session);
-      const activeUser = session?.user || null;
-      setUser(activeUser);
-      if (activeUser) {
-        const prof = await fetchOrCreateProfile(activeUser);
-        setProfile(prof);
-      } else {
-        setProfile(null);
-      }
-    });
+    const { data: sub } = supabase.auth.onAuthStateChange(
+      async (_evt, session) => {
+        setSession(session);
+        const activeUser = session?.user || null;
+        setUser(activeUser);
+        if (activeUser) {
+          const prof = await fetchOrCreateProfile(activeUser);
+          setProfile(prof);
+        } else {
+          setProfile(null);
+        }
+      },
+    );
 
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -60,7 +62,10 @@ export function AuthProvider({ children }) {
 
   // ✅ Login
   async function login(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error) throw error;
     if (data?.user) {
       const prof = await fetchOrCreateProfile(data.user);

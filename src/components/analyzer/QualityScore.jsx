@@ -7,7 +7,9 @@ export default function QualityScore({ quality }) {
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-50">
       <h3 className="text-blue-700 font-semibold mb-2">Data Quality</h3>
-      <div className="text-3xl font-bold text-blue-800 mb-3">{overall ?? "—"}%</div>
+      <div className="text-3xl font-bold text-blue-800 mb-3">
+        {overall ?? "—"}%
+      </div>
       <div className="space-y-2">
         {Object.entries(dimensions).map(([dim, val]) => (
           <Bar key={dim} label={dim} value={val} />

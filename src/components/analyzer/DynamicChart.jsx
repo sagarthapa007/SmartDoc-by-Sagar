@@ -1,10 +1,20 @@
-
-import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import React from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function DynamicChart({ result }) {
   if (!result || !result.ok || !result.series) return null;
-  const data = result.categories.map((cat, i) => ({ name: cat, value: result.series[i] }));
+  const data = result.categories.map((cat, i) => ({
+    name: cat,
+    value: result.series[i],
+  }));
 
   return (
     <div className="p-4 border rounded-xl bg-white dark:bg-gray-900 shadow-sm">

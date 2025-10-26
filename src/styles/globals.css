@@ -1,10 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 
 /* ==============================
    SMARTDOC ENTERPRISE – ENHANCED THEME
@@ -18,18 +16,18 @@
   --surface-elevated: #ffffff;
   --surface-muted: #f1f5f9;
   --muted: #f1f5f9;
-  
+
   /* Text */
   --text: #0f172a;
   --text-secondary: #475569;
   --text-tertiary: #94a3b8;
   --text-inverse: #ffffff;
-  
+
   /* Borders */
   --border: #e2e8f0;
   --border-hover: #cbd5e1;
   --divider: #e2e8f0;
-  
+
   /* Brand Colors */
   --brand1: #3b82f6;
   --brand2: #06b6d4;
@@ -38,7 +36,7 @@
   --brand-light: #dbeafe;
   --accent: var(--brand2);
   --accent-hover: #0891b2;
-  
+
   /* Status Colors */
   --success: #10b981;
   --success-bg: #d1fae5;
@@ -48,7 +46,7 @@
   --error-bg: #fee2e2;
   --info: #3b82f6;
   --info-bg: #dbeafe;
-  
+
   /* Module tokens */
   --module-comparison: #8b5cf6;
   --module-export: #10b981;
@@ -58,14 +56,17 @@
   --module-gap: 1.5rem;
   --module-padding: 2rem;
   --module-radius: 0.75rem;
-  
+
   /* Shadows */
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
   /* Border Radius */
   --radius-xs: 0.25rem;
   --radius-sm: 0.375rem;
@@ -74,24 +75,28 @@
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
   --radius-full: 9999px;
-  
+
   /* Spacing */
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
   --space-md: 1rem;
   --space-lg: 1.5rem;
   --space-xl: 2rem;
-  
+
   /* Typography */
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
-  
+
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  
+
   /* Gradients */
-  --gradient-brand: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%);
+  --gradient-brand: linear-gradient(
+    135deg,
+    var(--brand) 0%,
+    var(--accent) 100%
+  );
 }
 
 html.dark {
@@ -101,20 +106,20 @@ html.dark {
   --surface-elevated: #334155;
   --surface-muted: #1e293b;
   --muted: #334155;
-  
+
   --text: #f1f5f9;
   --text-secondary: #cbd5e1;
   --text-tertiary: #94a3b8;
   --text-inverse: #0f172a;
-  
+
   --border: #334155;
   --border-hover: #475569;
   --divider: #334155;
-  
+
   --brand: #60a5fa;
   --brand-hover: #3b82f6;
   --brand-light: rgba(96, 165, 250, 0.1);
-  
+
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.6), 0 4px 6px rgba(0, 0, 0, 0.5);
@@ -128,7 +133,9 @@ body {
   font-family: var(--font-sans);
   background: var(--background);
   color: var(--text);
-  transition: background-color var(--transition-base), color var(--transition-base);
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base);
 }
 
 /* ============================== */
@@ -397,8 +404,14 @@ button.analyze-btn {
 }
 
 @keyframes fadein {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fadein {
@@ -408,7 +421,6 @@ button.analyze-btn {
 .fade-in {
   animation: fadein 0.3s ease-out forwards;
 }
-
 
 .slide-up {
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -426,7 +438,8 @@ button.analyze-btn {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -482,12 +495,12 @@ html.dark .glass {
   .card {
     padding: var(--space-md);
   }
-  
+
   .btn {
     padding: 0.5rem 1rem;
     font-size: 0.8125rem;
   }
-  
+
   .drawer {
     width: 100%;
   }
@@ -538,7 +551,7 @@ header nav a.active {
   background: var(--brand-light);
   color: var(--brand);
   border: 1px solid var(--brand-hover);
-  box-shadow: 0 0 6px rgba(59,130,246,0.25);
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.25);
 }
 
 /* Subtle active underline */
@@ -590,8 +603,14 @@ html.dark header {
 
 /* Animation smoothing */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(3px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 /* ============================== */
 /* ✨ PREMIUM GLOW GRADIENT UNDERLINE */
@@ -605,7 +624,12 @@ header nav a.active::after {
   width: 70%;
   height: 2.5px;
   border-radius: 2px;
-  background: linear-gradient(90deg, var(--brand1), var(--accent), var(--brand1));
+  background: linear-gradient(
+    90deg,
+    var(--brand1),
+    var(--accent),
+    var(--brand1)
+  );
   background-size: 200% 100%;
   animation: glowFlow 2.5s linear infinite;
   box-shadow: 0 0 8px rgba(59, 130, 246, 0.35);
@@ -627,11 +651,11 @@ header nav a.active::after {
 header nav a.active {
   position: relative;
   color: var(--brand);
-  text-shadow: 0 0 6px rgba(59,130,246,0.35);
+  text-shadow: 0 0 6px rgba(59, 130, 246, 0.35);
 }
 
 html.dark header nav a.active {
-  text-shadow: 0 0 10px rgba(96,165,250,0.45);
+  text-shadow: 0 0 10px rgba(96, 165, 250, 0.45);
 }
 header::after {
   content: "";
@@ -639,8 +663,8 @@ header::after {
   inset: 0;
   background: linear-gradient(
     120deg,
-    rgba(255,255,255,0.05),
-    rgba(255,255,255,0.15) 30%,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.15) 30%,
     transparent 60%
   );
   opacity: 0.3;
@@ -690,14 +714,17 @@ header nav a.active::after {
 header nav a {
   position: relative;
   overflow: hidden;
-  transition: color 0.25s ease, background 0.25s ease;
+  transition:
+    color 0.25s ease,
+    background 0.25s ease;
 }
 
 header nav a:hover {
   color: var(--brand1);
   background: rgba(59, 130, 246, 0.05);
-  box-shadow: inset 0 0 12px rgba(59, 130, 246, 0.08),
-              0 0 8px rgba(59, 130, 246, 0.12);
+  box-shadow:
+    inset 0 0 12px rgba(59, 130, 246, 0.08),
+    0 0 8px rgba(59, 130, 246, 0.12);
   transform: translateY(-1px);
 }
 
@@ -734,8 +761,9 @@ header nav a.active {
 /* 🔹 Dark mode refinement */
 html.dark header nav a:hover {
   background: rgba(59, 130, 246, 0.12);
-  box-shadow: inset 0 0 12px rgba(59, 130, 246, 0.15),
-              0 0 8px rgba(59, 130, 246, 0.25);
+  box-shadow:
+    inset 0 0 12px rgba(59, 130, 246, 0.15),
+    0 0 8px rgba(59, 130, 246, 0.25);
 }
 
 html.dark header nav a::after {
@@ -746,8 +774,13 @@ html.dark header nav a::after {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 /* Mobile optimizations */
 @media (max-width: 768px) {
@@ -755,20 +788,19 @@ html.dark header nav a::after {
     height: 250px !important;
     font-size: 12px;
   }
-  
+
   .touch-target {
     min-height: 44px;
     min-width: 44px;
   }
-  
+
   /* Hide complex elements on mobile */
   .mobile-hidden {
     display: none;
   }
-  
+
   /* Better scrolling */
   .mobile-scroll {
     -webkit-overflow-scrolling: touch;
   }
 }
-

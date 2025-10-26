@@ -19,7 +19,8 @@ export default function InsightCards({
   onAction = () => {},
 }) {
   const renderInsight = (insight, idx, category) => {
-    const { text, action, actionType, potential_impact, severity, preview } = insight;
+    const { text, action, actionType, potential_impact, severity, preview } =
+      insight;
 
     const colorMap = {
       high: "border-red-400 bg-red-50 text-red-700",
@@ -67,7 +68,7 @@ export default function InsightCards({
 
   // 🧠 Extract and flatten insights by category
   const sections = Object.entries(insights || {}).filter(
-    ([key, value]) => Array.isArray(value) && value.length > 0
+    ([key, value]) => Array.isArray(value) && value.length > 0,
   );
 
   if (!sections.length) {

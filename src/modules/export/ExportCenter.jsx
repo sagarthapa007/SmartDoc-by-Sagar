@@ -44,7 +44,7 @@ async function handleExport(fmt, ds){
     const html = renderHTML(ds)
     downloadBlob('smartdoc_report.html', new Blob([html], {type:'text/html'}))
   } else if (fmt==='pdf') {
-    try { const { jsPDF } = await import('jspdf'); const doc = new jsPDF(); doc.text('SmartDoc Report', 20, 20); doc.text('Rows: '+ds.rows.length, 20, 30); doc.save('smartdoc.pdf') } 
+    try { const { jsPDF } = await import('jspdf'); const doc = new jsPDF(); doc.text('SmartDoc Report', 20, 20); doc.text('Rows: '+ds.rows.length, 20, 30); doc.save('smartdoc.pdf') }
     catch(e){ alert('Install PDF engine: npm i jspdf') }
   } else if (fmt==='pptx') {
     try { const PptxGenJS = (await import('pptxgenjs')).default; const pptx = new PptxGenJS(); const slide = pptx.addSlide(); slide.addText('SmartDoc Summary', { x:1, y:0.5, fontSize:24 }); slide.addText(`Rows: ${ds.rows.length}  Cols: ${ds.headers.length}`, { x:1, y:1.2, fontSize:14 }); await pptx.writeFile({ fileName:'smartdoc.pptx' }) }

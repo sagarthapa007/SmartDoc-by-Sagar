@@ -58,7 +58,10 @@ export default function App() {
                         <Route path="compare" element={<Compare />} />
                         <Route path="reports" element={<Reports />} />
                         <Route path="history" element={<History />} />
-                        <Route path="features/:id" element={<FeatureDetail />} />
+                        <Route
+                          path="features/:id"
+                          element={<FeatureDetail />}
+                        />
                         <Route path="settings" element={<Settings />} />
                         <Route
                           path="*"

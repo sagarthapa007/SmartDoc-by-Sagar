@@ -1,6 +1,7 @@
-
 from typing import Any, Dict, List
+
 import pandas as pd
+
 
 def _apply_filters(df: pd.DataFrame, filters: List[Dict[str, Any]]) -> pd.DataFrame:
     out = df.copy()
@@ -36,8 +37,10 @@ def _apply_filters(df: pd.DataFrame, filters: List[Dict[str, Any]]) -> pd.DataFr
             pass
     return out
 
+
 def _numeric_cols(df: pd.DataFrame):
     return df.select_dtypes(include=["number"]).columns.tolist()
+
 
 def run_query(df: pd.DataFrame, query: Dict[str, Any]) -> Dict[str, Any]:
     # Apply filters
@@ -69,7 +72,11 @@ def run_query(df: pd.DataFrame, query: Dict[str, Any]) -> Dict[str, Any]:
         data = grouped.sort_values(metric, ascending=False).head(limit).to_dict(orient="records")
         rec_chart = "bar"
     elif metric:
-        val = float(dfq[metric].agg(agg if agg != "avg" else "mean")) if metric in dfq.columns else None
+        val = (
+            float(dfq[metric].agg(agg if agg != "avg" else "mean"))
+            if metric in dfq.columns
+            else None
+        )
         data = [{metric: val}]
         rec_chart = "kpi"
     else:

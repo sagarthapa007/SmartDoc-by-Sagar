@@ -48,8 +48,14 @@ export default function Register() {
           Create Your SmartDoc Account
         </h1>
 
-        {error && <div className="text-red-500 text-sm mb-4 text-center">{error}</div>}
-        {success && <div className="text-green-500 text-sm mb-4 text-center">{success}</div>}
+        {error && (
+          <div className="text-red-500 text-sm mb-4 text-center">{error}</div>
+        )}
+        {success && (
+          <div className="text-green-500 text-sm mb-4 text-center">
+            {success}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

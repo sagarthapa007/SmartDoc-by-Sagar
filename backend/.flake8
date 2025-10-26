@@ -1,0 +1,27 @@
+# ======================================================
+# 🧠 SmartDoc Enterprise - Flake8 Configuration
+# ======================================================
+
+[flake8]
+max-line-length = 100
+extend-ignore =
+    E203,  # Whitespace before ':', compatible with Black
+    W503,  # Line break before binary operator
+    E501,  # Line length handled by Black
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    dist,
+    build,
+    migrations,
+    tests,
+    node_modules,
+    frontend,
+    src,
+    *.ipynb
+
+max-complexity = 12
+statistics = true
+show-source = true

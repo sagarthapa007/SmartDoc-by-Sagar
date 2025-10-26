@@ -6,7 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 /**
  * Environment-based credentials.
  * These must be defined in your `.env` file:
- * 
+ *
  * VITE_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
  * VITE_SUPABASE_ANON_KEY=YOUR_PUBLIC_ANON_KEY
  */
@@ -46,12 +46,21 @@ export async function getSession() {
 }
 
 export async function signIn(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
   if (error) throw error;
   return data.user;
 }
 
-export async function signUp(email, password, fullName = "", organization = "", country = "") {
+export async function signUp(
+  email,
+  password,
+  fullName = "",
+  organization = "",
+  country = "",
+) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -75,7 +84,11 @@ export async function signOut() {
  * Make sure the 'profiles' table exists and has RLS enabled.
  */
 export async function fetchUserProfile(userId) {
-  const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
   if (error) throw error;
   return data;
 }
@@ -84,7 +97,11 @@ export async function fetchUserProfile(userId) {
  * 📝 Update user profile
  */
 export async function updateUserProfile(userId, updates) {
-  const { data, error } = await supabase.from("profiles").update(updates).eq("id", userId).select();
+  const { data, error } = await supabase
+    .from("profiles")
+    .update(updates)
+    .eq("id", userId)
+    .select();
   if (error) throw error;
   return data;
 }

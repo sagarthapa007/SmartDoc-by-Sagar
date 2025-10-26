@@ -59,7 +59,7 @@ export default function Upload() {
       // ✅ Save scrutiny directly (no detect step)
       setReport(data);
       setDataset(data.scrutiny);
-      setSession((p) => ({ ...p, uploadId: data.upload_id }));
+      setSession((p) => ({ ...p, uploadId: data.upload_id, dataset: data.scrutiny }));
       setProgress(100);
       setStatusMsg("File uploaded & scrutinized successfully ✅");
     } catch (err) {
@@ -73,55 +73,59 @@ export default function Upload() {
   };
 
   // ✅ Confirm and analyze
-const confirmAndAnalyze = async (report) => {
-  if (!report?.upload_id) return;
-  setLoading(true);
-  setStatusMsg("Analyzing data...");
+  const confirmAndAnalyze = async (report) => {
+    if (!report?.upload_id) return;
+    setLoading(true);
+    setStatusMsg("Analyzing data...");
 
-  try {
-    const scrutinyPayload = report.scrutiny || report; // 👈 ensure we send scrutiny only
-    const res = await apiClient.post("analyze", {
-      upload_id: report.upload_id,
-      scrutiny: scrutinyPayload,
-    });
+    try {
+      const scrutinyPayload = report.scrutiny || report; // 👈 ensure we send scrutiny only
+      const res = await apiClient.post("analyze", {
+        upload_id: report.upload_id,
+        scrutiny: scrutinyPayload,
+      });
 
-    console.log("🧠 Analyze Response:", res.data);
+      console.log("🧠 Analyze Response:", res.data);
 
-// ✅ Normalize dataset only if not already set
-if (!report.scrutiny && res.data?.scrutiny) {
-  // only applies to certain backend responses (rare)
-  const scrutiny = res.data.scrutiny;
-  const dataset = {
-    headers: scrutiny.schema?.map(s => s.name) || [],
-    rows: scrutiny.preview || [],
-    meta: {
-      filetype: res.data.filetype,
-      upload_id: res.data.upload_id,
-      filename: res.data.filename,
-      filesize_bytes: res.data.filesize_bytes,
-    },
+      // ✅ Normalize dataset only if not already set
+      if (!report.scrutiny && res.data?.scrutiny) {
+        // only applies to certain backend responses (rare)
+        const scrutiny = res.data.scrutiny;
+        const dataset = {
+          headers: scrutiny.schema?.map((s) => s.name) || [],
+          rows: scrutiny.preview || [],
+          meta: {
+            filetype: res.data.filetype,
+            upload_id: res.data.upload_id,
+            filename: res.data.filename,
+            filesize_bytes: res.data.filesize_bytes,
+          },
+        };
+        console.log("✅ Normalized dataset from backend scrutiny:", dataset);
+        setDataset(dataset);
+      } else {
+        console.log(
+          "ℹ️ Using existing dataset from upload (no re-normalization needed).",
+        );
+      }
+
+      setSession((p) => ({
+        ...p,
+        analysis: res.data,
+        uploadId: report.upload_id,
+      }));
+
+      // ✅ optional: store for history
+      sessionStorage.setItem("latest_upload_id", report.upload_id);
+      navigate("/analyze");
+    } catch (e) {
+      console.error("Analyze error:", e);
+      setError(e.response?.data?.detail || e.message || "Analysis failed");
+      setStatusMsg("Analysis failed ❌");
+    } finally {
+      setLoading(false);
+    }
   };
-  console.log("✅ Normalized dataset from backend scrutiny:", dataset);
-  setDataset(dataset);
-} else {
-  console.log("ℹ️ Using existing dataset from upload (no re-normalization needed).");
-}
-
-
-    setSession((p) => ({ ...p, analysis: res.data, uploadId: report.upload_id }));
-
-    // ✅ optional: store for history
-    sessionStorage.setItem("latest_upload_id", report.upload_id);
-    navigate("/analyze");
-  } catch (e) {
-    console.error("Analyze error:", e);
-    setError(e.response?.data?.detail || e.message || "Analysis failed");
-    setStatusMsg("Analysis failed ❌");
-  } finally {
-    setLoading(false);
-  }
-};
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex flex-col items-center p-6">
@@ -130,9 +134,12 @@ if (!report.scrutiny && res.data?.scrutiny) {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Smart Upload Center</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Smart Upload Center
+        </h1>
         <p className="text-gray-600 text-sm max-w-xl mx-auto">
-          Upload CSV, Excel, JSON, DOCX, or PDF — SmartDoc will automatically analyze and prepare your data for AI insights.
+          Upload CSV, Excel, JSON, DOCX, or PDF — SmartDoc will automatically
+          analyze and prepare your data for AI insights.
         </p>
       </motion.div>
 
@@ -152,7 +159,10 @@ if (!report.scrutiny && res.data?.scrutiny) {
           className="hidden"
         />
 
-        <label htmlFor="fileInput" className="cursor-pointer flex flex-col items-center">
+        <label
+          htmlFor="fileInput"
+          className="cursor-pointer flex flex-col items-center"
+        >
           {loading ? (
             <Loader className="w-14 h-14 text-blue-600 animate-spin mb-3" />
           ) : (
@@ -190,7 +200,9 @@ if (!report.scrutiny && res.data?.scrutiny) {
             exit={{ opacity: 0, y: 20 }}
             className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-lg bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200"
           >
-            <div className="px-4 py-2 text-gray-800 text-sm font-medium">{statusMsg}</div>
+            <div className="px-4 py-2 text-gray-800 text-sm font-medium">
+              {statusMsg}
+            </div>
             <div className="h-2 w-full bg-gray-200">
               <motion.div
                 className="h-full bg-blue-600"

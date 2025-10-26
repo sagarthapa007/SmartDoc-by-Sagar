@@ -1,10 +1,12 @@
+from typing import Any, Dict, List
 
-from typing import Dict, Any, List
 from app.services.registry import REGISTRY
+
 
 def run_explore_query(dataset_id: str, query: Dict[str, Any]) -> Dict[str, Any]:
     ds = REGISTRY.get(dataset_id)
-    if not ds: raise ValueError("dataset not found")
+    if not ds:
+        raise ValueError("dataset not found")
     headers = ds.get("headers", [])
     rows: List[dict] = ds.get("rows", [])
     q = query or {}
@@ -16,24 +18,31 @@ def run_explore_query(dataset_id: str, query: Dict[str, Any]) -> Dict[str, Any]:
 
     def match(r):
         for f in filters:
-            col = f.get("column"); op = f.get("operator"); val = f.get("value")
+            col = f.get("column")
+            op = f.get("operator")
+            val = f.get("value")
             rv = r.get(col)
             if op == ">":
                 try:
-                    if float(rv) <= float(val): return False
+                    if float(rv) <= float(val):
+                        return False
                 except Exception:
                     return False
             elif op == "<":
                 try:
-                    if float(rv) >= float(val): return False
+                    if float(rv) >= float(val):
+                        return False
                 except Exception:
                     return False
             elif op == "between":
                 lo, hi = val
-                if not (str(lo) <= str(rv) <= str(hi)): return False
+                if not (str(lo) <= str(rv) <= str(hi)):
+                    return False
             elif op == "eq" or op is None:
-                if str(rv) != str(val): return False
+                if str(rv) != str(val):
+                    return False
         return True
+
     filtered = [r for r in rows if match(r)]
 
     results = filtered
@@ -54,7 +63,7 @@ def run_explore_query(dataset_id: str, query: Dict[str, Any]) -> Dict[str, Any]:
             if op.lower() == "sum":
                 agg_rows.append({group_by: k, f"{op_col}_sum": sum(vals)})
             elif op.lower() == "avg":
-                avg = (sum(vals)/len(vals)) if vals else 0
+                avg = (sum(vals) / len(vals)) if vals else 0
                 agg_rows.append({group_by: k, f"{op_col}_avg": avg})
         results = agg_rows
         sql_equiv = f"SELECT {group_by}, {op.upper()}({op_col}) FROM data GROUP BY {group_by}"
@@ -62,7 +71,7 @@ def run_explore_query(dataset_id: str, query: Dict[str, Any]) -> Dict[str, Any]:
     # sort
     if sort:
         col, direction = next(iter(sort.items()))
-        results = sorted(results, key=lambda r: r.get(col), reverse=(direction.lower()=="desc"))
+        results = sorted(results, key=lambda r: r.get(col), reverse=(direction.lower() == "desc"))
     # limit
     results = results[:limit]
     return {"results": results, "total_matched": len(filtered), "sql_equivalent": sql_equiv}

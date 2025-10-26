@@ -1,11 +1,13 @@
-import os
-import uuid
-import tempfile
 import math
-from fastapi import APIRouter, UploadFile, File, HTTPException
+import os
+import tempfile
+import uuid
+
 from app.utils.file_scrutinizer import scrutinize_file  # ✅ your enterprise-grade function
+from fastapi import APIRouter, File, HTTPException, UploadFile
 
 router = APIRouter(tags=["Upload"])
+
 
 # ============================================================
 # 🧩 Helper — make JSON safe (no NaN / Inf)
@@ -66,7 +68,7 @@ async def upload_file(file: UploadFile = File(...)):
             "filetype": sanitized.get("file_type", "unknown"),
             "uploaded_at": sanitized.get("upload_time"),
             "scrutiny": sanitized,
-            "status": "ok"
+            "status": "ok",
         }
 
         print(f"✅ Upload processed: {upload_id} ({filename})")
@@ -74,5 +76,6 @@ async def upload_file(file: UploadFile = File(...)):
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Upload failed: {e}")

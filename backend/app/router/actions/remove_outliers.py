@@ -1,9 +1,9 @@
-
-from fastapi import APIRouter, HTTPException
 from app.services.action_executor import ActionExecutor
+from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
 executor = ActionExecutor()
+
 
 @router.post("/remove_outliers")
 async def remove_outliers(payload: dict):

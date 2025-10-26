@@ -12,7 +12,13 @@ import Histogram from "@charts/Histogram.jsx";
  * - analysis: full analysis object (to access analysis.visuals.trend / ranking)
  * - headers, rows: for generic charts (heatmap/histogram)
  */
-export default function DynamicChartRenderer({ domain, registry, analysis, headers, rows }) {
+export default function DynamicChartRenderer({
+  domain,
+  registry,
+  analysis,
+  headers,
+  rows,
+}) {
   const cfg = registry[domain] || registry.generic;
   const a = analysis || {};
   const trendData = a.visuals?.trend;
@@ -23,7 +29,13 @@ export default function DynamicChartRenderer({ domain, registry, analysis, heade
       case "RevenueTrendChart":
         return <RevenueTrendChart data={trendData || []} title="Trend" />;
       case "TopPerformersChart":
-        return <TopPerformersChart data={rankingData || []} title="Top Ranking" metric={a?.context?.metrics?.[0]} />;
+        return (
+          <TopPerformersChart
+            data={rankingData || []}
+            title="Top Ranking"
+            metric={a?.context?.metrics?.[0]}
+          />
+        );
       case "Heatmap":
         return <Heatmap headers={headers} rows={rows} />;
       case "Histogram":
@@ -39,7 +51,9 @@ export default function DynamicChartRenderer({ domain, registry, analysis, heade
       <p className="text-sm opacity-70">{cfg.description}</p>
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {cfg.charts.map((ch) => (
-          <div key={ch} className="card fade-in">{renderChart(ch)}</div>
+          <div key={ch} className="card fade-in">
+            {renderChart(ch)}
+          </div>
         ))}
       </div>
     </div>

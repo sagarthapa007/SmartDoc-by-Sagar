@@ -1,0 +1,108 @@
+# =====================================================
+# 🌐 SMARTDOC ENTERPRISE - VERCEL DEPLOYMENT IGNORE FILE
+# Purpose: Optimize Vercel frontend build (ignore backend, data, ML)
+# Applies only to Vercel builds
+# Updated: 2025-10-26
+# =====================================================
+
+# === 🧠 Backend / FastAPI / Python Files ===
+backend/
+*.py
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+requirements.txt
+requirements-dev.txt
+.venv/
+venv/
+env/
+runtime/
+logs/
+nohup.out
+*.db
+*.sqlite3
+*.log
+*.out
+*.seed
+instance/
+__logs__/
+
+# === 🧩 ML / Intelligence / Data Cache ===
+*.pkl
+*.pickle
+*.joblib
+*.npy
+*.npz
+*.h5
+*.csv
+*.xlsx
+*.xls
+*.json
+backend/app/ml/
+backend/app/intelligence/
+backend/app/utils/
+backend/uploads/
+backend/temp/
+backend/tests/
+
+# === ☁️ Deployment Configs Not Needed for Frontend ===
+.renderignore
+render.yaml
+Dockerfile
+docker-compose.yml
+*.dockerfile
+*.dockerignore
+.supabase/
+.supabase/
+supabase/
+*.env
+.env*
+.env.*
+*.secret
+*.config
+*.bak
+
+# === 🧪 Testing / Coverage ===
+coverage/
+reports/
+htmlcov/
+pytestdebug.log
+.pytest_cache/
+.tox/
+.nox/
+.mypy_cache/
+.pyre/
+test_output/
+
+# === 🧱 Dev Tools & IDE ===
+.vscode/
+.idea/
+.history/
+*.sublime-project
+*.sublime-workspace
+.code-workspace
+__pycache__/
+
+# === 🧾 Docs, Drafts, and Assets ===
+docs/
+drafts/
+samples/
+screenshots/
+designs/
+reports/
+assets/temp/
+notes/
+
+# === 🪟 System & OS Files ===
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+Icon?
+.trash-*
+
+# === ⚙️ Optional: Frontend build cache ===
+# (keep if needed for faster rebuilds)
+.cache/
+.tmp/

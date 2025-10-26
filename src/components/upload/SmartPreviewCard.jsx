@@ -9,7 +9,9 @@ export default function SmartPreviewCard({ report, onConfirm }) {
   // Handle unified shape
   const scrutiny = report.scrutiny || {};
   const fileType = (report.filetype || scrutiny.file_type || "").toLowerCase();
-  const isTabular = ["csv", "excel", "json", "xlsx", "xls"].some(t => fileType.includes(t));
+  const isTabular = ["csv", "excel", "json", "xlsx", "xls"].some((t) =>
+    fileType.includes(t),
+  );
 
   const suggestions = scrutiny.suggestions || [];
   const preview = scrutiny.preview || [];

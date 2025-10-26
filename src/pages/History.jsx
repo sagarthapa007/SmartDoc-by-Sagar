@@ -1,5 +1,5 @@
 import React from "react";
-export default function History(){
+export default function History() {
   return (
     <div className="section">
       <div className="card">

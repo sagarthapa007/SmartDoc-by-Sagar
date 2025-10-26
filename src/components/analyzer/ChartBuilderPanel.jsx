@@ -18,7 +18,8 @@ export default function ChartBuilderPanel({ headers = [], rows = [] }) {
   ];
 
   const render = () => {
-    if (!rows?.length) return <div className="text-sm opacity-60">No data.</div>;
+    if (!rows?.length)
+      return <div className="text-sm opacity-60">No data.</div>;
 
     switch (chartType) {
       case "heatmap":
@@ -42,7 +43,9 @@ export default function ChartBuilderPanel({ headers = [], rows = [] }) {
           />
         );
       default:
-        return <div className="text-sm opacity-60">Choose chart type & columns.</div>;
+        return (
+          <div className="text-sm opacity-60">Choose chart type & columns.</div>
+        );
     }
   };
 

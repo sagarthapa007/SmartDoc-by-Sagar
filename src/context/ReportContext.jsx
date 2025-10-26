@@ -1,1 +1,1 @@
-export const ReportProvider = ({children})=>children;
+export const ReportProvider = ({ children }) => children;

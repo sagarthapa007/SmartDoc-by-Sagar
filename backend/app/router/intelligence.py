@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
-from typing import Dict, Any
+from typing import Any, Dict
+
 from app.intelligence.chart_suggester import suggest_charts
-from app.intelligence.insight_generator import persona_insights
 from app.intelligence.explainer import explain
+from app.intelligence.insight_generator import persona_insights
+from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
 

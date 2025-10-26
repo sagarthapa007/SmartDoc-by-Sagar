@@ -44,12 +44,7 @@ export default function SuggestChartButton({ dataset }) {
               <strong>{s.chart_type.toUpperCase()}</strong> – {s.reasoning}
               {s.x_axis && (
                 <div className="text-xs text-gray-500 mt-1">
-                  X: {s.x_axis}{" "}
-                  {s.y_axis && (
-                    <>
-                      | Y: {s.y_axis}
-                    </>
-                  )}
+                  X: {s.x_axis} {s.y_axis && <>| Y: {s.y_axis}</>}
                 </div>
               )}
             </li>

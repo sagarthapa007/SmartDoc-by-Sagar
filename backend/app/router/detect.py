@@ -1,11 +1,14 @@
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+import io
+import os
 from typing import Optional
+
 import pandas as pd
-import io, os
 from app.services.data_detector_ml import SmartDataTypeDetector
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 router = APIRouter(prefix="/detect", tags=["Detect"])
 detector = SmartDataTypeDetector()
+
 
 @router.post("/")
 async def detect(file: Optional[UploadFile] = File(None), upload_id: Optional[str] = Form(None)):
@@ -25,7 +28,9 @@ async def detect(file: Optional[UploadFile] = File(None), upload_id: Optional[st
             # Locate file from your upload directory
             filepath = f"./uploads/{upload_id}"
             if not os.path.exists(filepath):
-                raise HTTPException(status_code=404, detail=f"No uploaded file found for {upload_id}")
+                raise HTTPException(
+                    status_code=404, detail=f"No uploaded file found for {upload_id}"
+                )
             ext = os.path.splitext(filepath)[1].lower().strip(".")
             df = _read_file_to_df(open(filepath, "rb").read(), ext)
         else:
@@ -49,16 +54,17 @@ async def detect(file: Optional[UploadFile] = File(None), upload_id: Optional[st
             "persona_recommendations": {
                 "junior": ["data_cleaning", "duplicate_detection"],
                 "manager": ["trend_analysis", "team_performance"],
-                "executive": ["kpi_dashboard", "roi_metrics"]
-            }
+                "executive": ["kpi_dashboard", "roi_metrics"],
+            },
         }
         return scrutiny
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 def _read_file_to_df(file_bytes, ext):
-    """ Helper to load various file types into pandas DataFrame """
+    """Helper to load various file types into pandas DataFrame"""
     if ext in ["csv"]:
         return pd.read_csv(io.BytesIO(file_bytes))
     elif ext in ["xlsx", "xls"]:

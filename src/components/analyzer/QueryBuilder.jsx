@@ -1,21 +1,20 @@
-
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 
 export default function QueryBuilder({ dataset, onResult }) {
-  const [metric, setMetric] = useState('');
-  const [dimension, setDimension] = useState('');
+  const [metric, setMetric] = useState("");
+  const [dimension, setDimension] = useState("");
 
   const handleRun = async () => {
     try {
-      const res = await axios.post('/api/explore', {
+      const res = await axios.post("/api/explore", {
         rows: dataset,
         metric,
         dimension,
       });
       onResult(res.data);
     } catch (err) {
-      console.error('Query error', err);
+      console.error("Query error", err);
     }
   };
 
@@ -30,7 +29,9 @@ export default function QueryBuilder({ dataset, onResult }) {
         >
           <option value="">Select Metric</option>
           {Object.keys(dataset[0] || {}).map((key) => (
-            <option key={key} value={key}>{key}</option>
+            <option key={key} value={key}>
+              {key}
+            </option>
           ))}
         </select>
         <select
@@ -40,10 +41,17 @@ export default function QueryBuilder({ dataset, onResult }) {
         >
           <option value="">Group by...</option>
           {Object.keys(dataset[0] || {}).map((key) => (
-            <option key={key} value={key}>{key}</option>
+            <option key={key} value={key}>
+              {key}
+            </option>
           ))}
         </select>
-        <button onClick={handleRun} className="bg-blue-600 text-white px-4 py-2 rounded-md">Run</button>
+        <button
+          onClick={handleRun}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md"
+        >
+          Run
+        </button>
       </div>
     </div>
   );

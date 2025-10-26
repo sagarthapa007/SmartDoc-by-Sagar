@@ -17,9 +17,9 @@ export default function SidebarLink({ to, icon, label, active, onClick }) {
       className={({ isActive }) =>
         [
           "group flex items-center gap-3 rounded-xl px-3 py-2.5 border transition-all",
-          (isActive || active)
+          isActive || active
             ? "border-transparent bg-[var(--panel)] ring-1 ring-inset ring-[var(--brandA)]/20 shadow-[0_0_0_1px_theme(colors.blue.500/0.15),0_4px_20px_-4px_theme(colors.blue.500/0.25)]"
-            : "border-transparent hover:bg-[var(--panel)] hover:border-[var(--border)]"
+            : "border-transparent hover:bg-[var(--panel)] hover:border-[var(--border)]",
         ].join(" ")
       }
     >

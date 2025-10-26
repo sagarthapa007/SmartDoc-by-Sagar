@@ -1,1 +1,9 @@
-export default function Skeleton({lines=3}){return <div>{[...Array(lines)].map((_,i)=>(<div key={i} className='skeleton my-2'/>))}</div>}
+export default function Skeleton({ lines = 3 }) {
+  return (
+    <div>
+      {[...Array(lines)].map((_, i) => (
+        <div key={i} className="skeleton my-2" />
+      ))}
+    </div>
+  );
+}

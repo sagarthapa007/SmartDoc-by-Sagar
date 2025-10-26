@@ -1,8 +1,17 @@
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Home, FolderOpen, Wand2, Sparkles, Users, Settings,
-  Pin, PinOff, PanelLeftClose, PanelRightClose, Zap
+  Home,
+  FolderOpen,
+  Wand2,
+  Sparkles,
+  Users,
+  Settings,
+  Pin,
+  PinOff,
+  PanelLeftClose,
+  PanelRightClose,
+  Zap,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { NAV_ITEMS } from "@/layout.config.js";
@@ -26,7 +35,7 @@ export default function SmartSidebar({
       collapsed: { width: sizes.collapsed },
       expanded: { width: sizes.expanded },
     }),
-    []
+    [],
   );
 
   const SideSwitchIcon = side === "left" ? PanelRightClose : PanelLeftClose;

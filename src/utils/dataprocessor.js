@@ -28,7 +28,7 @@ export function getBasicStats(data) {
   const rows = data.length;
 
   const numericCols = columns.filter((col) =>
-    data.every((r) => !isNaN(parseFloat(r[col])) || r[col] === "")
+    data.every((r) => !isNaN(parseFloat(r[col])) || r[col] === ""),
   );
 
   const stats = numericCols.map((col) => {

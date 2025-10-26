@@ -51,7 +51,7 @@ apiClient.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // ⚡ 4️⃣ Global error normalization
@@ -82,7 +82,7 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(normalized);
-  }
+  },
 );
 
 export default apiClient;

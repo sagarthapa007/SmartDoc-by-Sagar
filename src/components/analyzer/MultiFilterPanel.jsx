@@ -5,10 +5,12 @@ export default function MultiFilterPanel({ data, onFilter }) {
   const [filters, setFilters] = useState({});
 
   const apply = (newFilters) => {
-    const filtered = (data || []).filter(row =>
+    const filtered = (data || []).filter((row) =>
       Object.entries(newFilters).every(([key, v]) =>
-        String(row?.[key] ?? "").toLowerCase().includes(String(v ?? "").toLowerCase())
-      )
+        String(row?.[key] ?? "")
+          .toLowerCase()
+          .includes(String(v ?? "").toLowerCase()),
+      ),
     );
     onFilter?.(filtered);
   };
@@ -26,19 +28,22 @@ export default function MultiFilterPanel({ data, onFilter }) {
         <h3 className="text-blue-700 font-semibold">Multi Filter</h3>
         <button
           className="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
-          onClick={() => { setFilters({}); apply({}); }}
+          onClick={() => {
+            setFilters({});
+            apply({});
+          }}
         >
           Clear
         </button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {headers.map(h => (
+        {headers.map((h) => (
           <input
             key={h}
             placeholder={`Filter ${h}`}
             className="border border-gray-200 text-xs px-2 py-1 rounded"
             value={filters[h] ?? ""}
-            onChange={e => handleChange(h, e.target.value)}
+            onChange={(e) => handleChange(h, e.target.value)}
           />
         ))}
       </div>
