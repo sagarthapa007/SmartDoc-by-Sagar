@@ -200,7 +200,7 @@ export default function Analyze() {
           {},
       };
 
-      const res = await axios.post(`${API_URL}/analyze`, body, {
+      const res = await axios.post(`${API_URL}/api/analyze`, body, {
         headers: { "Content-Type": "application/json" },
       });
 
