@@ -8,7 +8,7 @@ from app.schemas.user import UserCreate, UserLogin, UserOut, TokenOut
 from app.utils.security import hash_password, verify_password, create_access_token, decode_token
 
 security = HTTPBearer()
-router = APIRouter(prefix="/api/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 # Create tables
 Base.metadata.create_all(bind=engine)

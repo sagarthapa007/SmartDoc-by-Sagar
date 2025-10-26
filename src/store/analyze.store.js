@@ -21,10 +21,36 @@ export const useAnalyzeStore = create(
       error: null,
 
       // ---- Setters ----
-      setDataset: (ds) => {
-        console.log("📊 Dataset updated:", ds?.headers?.length, "columns,", ds?.rows?.length, "rows");
-        set({ dataset: ds });
-      },
+setDataset: (ds) => {
+  // Normalize the dataset structure (handles both upload and analyze responses)
+  let normalized = null;
+
+  if (!ds) {
+    normalized = null;
+  } else if (ds.scrutiny) {
+    // From /upload endpoint
+    normalized = ds.scrutiny;
+  } else if (ds.analysis) {
+    // From /analyze endpoint
+    normalized = ds.analysis;
+  } else if (Array.isArray(ds.preview)) {
+    // Direct raw dataset from file_scrutinizer
+    normalized = ds;
+  } else {
+    normalized = ds;
+  }
+
+  console.log(
+    "📊 Dataset updated:",
+    normalized?.headers?.length || normalized?.columns_detected,
+    "columns,",
+    normalized?.rows?.length || normalized?.rows_detected,
+    "rows"
+  );
+
+  set({ dataset: normalized });
+},
+
       setError: (err) => set({ error: err ?? null }),
       resetResult: () => set({ result: null }),
       resetAll: () =>

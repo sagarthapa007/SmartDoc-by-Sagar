@@ -1,35 +1,33 @@
 import os
-import io
 import math
-import json
 import warnings
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
+from io import StringIO
 
+import numpy as np
 import pandas as pd
 
-# Optional libs for documents (guarded imports)
+# Optional libs for documents
 try:
-    from docx import Document as DocxDocument  # DOCX
+    from docx import Document as DocxDocument
 except Exception:
     DocxDocument = None
 
 try:
-    # Basic .doc support is limited; python-docx doesn't read .doc.
-    # If you install 'textract' or 'mammoth', you can enhance this branch.
-    import textract  # optional
+    import textract
 except Exception:
     textract = None
 
 try:
-    from PyPDF2 import PdfReader  # PDF
+    from PyPDF2 import PdfReader
 except Exception:
     PdfReader = None
 
 
-# =========================
-# Helpers
-# =========================
+# ======================================================
+# 🧠 Utility Helpers
+# ======================================================
 
 def _summarize_text(text: str, limit: int = 1000) -> str:
     text = (text or "").replace("\r", " ").replace("\n", " ").strip()
@@ -37,34 +35,41 @@ def _summarize_text(text: str, limit: int = 1000) -> str:
 
 
 def _safe_to_datetime_share(s: pd.Series) -> float:
-    """Share of values that parse as datetime; silence pandas warnings."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
-        parsed = pd.to_datetime(s, errors="coerce", infer_datetime_format=False)
+        parsed = pd.to_datetime(s, errors="coerce")
     return parsed.notna().mean() if len(s) else 0.0
 
 
 def _infer_col_type(s: pd.Series) -> str:
-    """Infer coarse type: number | integer | string | boolean | datetime | categorical."""
+    """Infer column type efficiently and safely."""
+    if s.dropna().empty:
+        return "string"
+
+    if pd.api.types.is_bool_dtype(s):
+        return "boolean"
+    if pd.api.types.is_integer_dtype(s):
+        return "integer"
+    if pd.api.types.is_float_dtype(s):
+        return "number"
+
     ss = s.astype("string")
 
-    # boolean-ish
-    if ss.dropna().isin(["true", "false", "True", "False", "0", "1", "yes", "no"]).mean() > 0.9:
+    if ss.dropna().str.strip().str.lower().isin(
+        ["true", "false", "0", "1", "yes", "no"]
+    ).mean() > 0.9:
         return "boolean"
 
-    # numeric / integer
-    numeric_share = pd.to_numeric(ss, errors="coerce").notna().mean() if len(ss) else 0.0
+    coerced = pd.to_numeric(ss, errors="coerce")
+    numeric_share = coerced.notna().mean() if len(ss) else 0.0
     if numeric_share > 0.9:
-        coerced = pd.to_numeric(ss, errors="coerce")
         if coerced.dropna().apply(lambda x: float(x).is_integer()).mean() > 0.9:
             return "integer"
         return "number"
 
-    # datetime
     if _safe_to_datetime_share(ss) > 0.7:
         return "datetime"
 
-    # categorical (few unique)
     nunique = ss.nunique(dropna=True)
     if len(ss) > 0 and nunique > 0 and (nunique / len(ss)) < 0.1:
         return "categorical"
@@ -90,11 +95,8 @@ def _quality_scan(df: pd.DataFrame) -> Dict[str, Any]:
     missing_pct = {k: (float(v) / len(df) if len(df) else 0.0) for k, v in missing.items()}
 
     numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
-    zeros, negatives = {}, {}
-    for c in numeric_cols:
-        col = pd.to_numeric(df[c], errors="coerce")
-        zeros[c] = int((col == 0).sum())
-        negatives[c] = int((col < 0).sum())
+    zeros = {c: int((df[c] == 0).sum()) for c in numeric_cols}
+    negatives = {c: int((df[c] < 0).sum()) for c in numeric_cols}
 
     return {
         "missing": missing,
@@ -140,11 +142,9 @@ def _structured_result(
         out["quality"] = _quality_scan(df)
         out["preview"] = _df_preview(df)
 
-        # confidence heuristic: more rows/cols -> more “tabular” confidence
-        base = min(1.0, math.log10(max(10, len(df))) / 3.0 + (len(df.columns) / 50.0))
+        base = min(1.0, (math.log10(max(10, len(df))) / 4.0) + (len(df.columns) / 60.0))
         out["confidence"] = round(min(1.0, base), 3)
 
-        # suggestions
         sug = []
         if any(v > 0 for v in out["quality"]["numeric_negatives"].values()):
             sug.append("Review negative values in numeric columns.")
@@ -158,33 +158,160 @@ def _structured_result(
     return out
 
 
-# =========================
-# Readers (datasets)
-# =========================
+# ======================================================
+# 🧩 Smart Header Handling & Cleaning
+# ======================================================
 
-def _read_csv(path: str) -> pd.DataFrame:
-    # permissive engine for odd CSVs + encodings
+def _best_header_row_from_sample(sample_rows: List[List[str]]) -> int:
+    if not sample_rows:
+        return 0
+    scores = []
+    for i, row in enumerate(sample_rows):
+        stripped = [str(c).strip() for c in row if str(c).strip()]
+        if not stripped:
+            scores.append((i, 0.0))
+            continue
+        avg_len = float(np.mean([len(c) for c in stripped]))
+        score = len(stripped) + 0.5 * avg_len
+        scores.append((i, score))
+    return max(scores, key=lambda x: x[1])[0] if scores else 0
+
+
+def _clean_and_dedupe_headers(columns) -> List[str]:
+    cleaned, seen = [], {}
+    for idx, c in enumerate(columns):
+        name = str(c or "").replace("\n", " ").strip()
+        name = " ".join(name.split())
+        if not name or "unnamed" in name.lower():
+            name = f"col_{idx+1}"
+        base, k = name, 1
+        while name.lower() in seen:
+            k += 1
+            name = f"{base}_{k}"
+        seen[name.lower()] = True
+        cleaned.append(name)
+    return cleaned
+
+
+def _drop_empty_edges(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    empty_mask = df.isna() | df.astype(str).map(lambda x: x.strip() == "")
+    df = df.loc[:, ~empty_mask.all(axis=0)]
+    df = df.loc[~empty_mask.all(axis=1)]
+    return df
+
+
+def _coerce_common_types(df: pd.DataFrame) -> pd.DataFrame:
+    for c in df.columns:
+        s = df[c]
+        num_try = pd.to_numeric(s, errors="coerce")
+        num_ratio = num_try.notna().mean()
+        if num_ratio > 0.8:
+            df[c] = num_try
+            continue
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            dt_try = pd.to_datetime(s, errors="coerce")
+        dt_ratio = dt_try.notna().mean()
+        if dt_ratio > 0.8:
+            df[c] = dt_try
+    return df
+
+
+# ======================================================
+# 🧩 Readers (CSV / Excel)
+# ======================================================
+
+def _read_csv_smart(path: str) -> pd.DataFrame:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
-        return pd.read_csv(path, engine="python", on_bad_lines="skip")
+        lines = []
+        try:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                for _ in range(6):
+                    line = f.readline()
+                    if not line:
+                        break
+                    lines.append(line)
+        except Exception:
+            pass
+
+        header_row = 0
+        if lines:
+            try:
+                peek = pd.read_csv(StringIO("".join(lines)), header=None, engine="python")
+                header_row = _best_header_row_from_sample(peek.fillna("").astype(str).values.tolist())
+            except Exception:
+                pass
+
+        try:
+            df = pd.read_csv(path, engine="python", on_bad_lines="skip", header=header_row)
+        except Exception:
+            df = pd.read_csv(path, engine="python", on_bad_lines="skip", header=None)
+
+        # Skip non-tabular title rows
+        if not df.empty and df.shape[1] == 1 and df.iloc[0].astype(str).str.len().max() > 30:
+            df = df.iloc[1:].reset_index(drop=True)
+
+        if isinstance(df.columns, pd.RangeIndex) or any("unnamed" in str(c).lower() for c in df.columns):
+            try:
+                df2 = pd.read_csv(path, engine="python", on_bad_lines="skip", header=[header_row, header_row + 1])
+                if isinstance(df2.columns, pd.MultiIndex):
+                    df2.columns = [
+                        " ".join([str(x) for x in tup if str(x).strip().lower() not in ("nan", "none", "unnamed: 0")]).strip()
+                        for tup in df2.columns.values
+                    ]
+                    df = df2
+            except Exception:
+                pass
+
+        df.columns = _clean_and_dedupe_headers(df.columns)
+        df = _drop_empty_edges(df)
+        df = _coerce_common_types(df)
+        return df
 
 
-def _read_excel(path: str) -> pd.DataFrame:
+def _read_excel_smart(path: str) -> pd.DataFrame:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
-        return pd.read_excel(path)
+        try:
+            peek = pd.read_excel(path, header=None, nrows=6)
+            header_row = _best_header_row_from_sample(peek.fillna("").astype(str).values.tolist())
+        except Exception:
+            header_row = 0
+
+        try:
+            df = pd.read_excel(path, header=header_row)
+        except Exception:
+            df = pd.read_excel(path, header=None)
+
+        # Skip title-like first row
+        if not df.empty and df.shape[1] == 1 and df.iloc[0].astype(str).str.len().max() > 30:
+            df = df.iloc[1:].reset_index(drop=True)
+
+        if isinstance(df.columns, pd.RangeIndex) or any("unnamed" in str(c).lower() for c in df.columns):
+            try:
+                df2 = pd.read_excel(path, header=[header_row, header_row + 1])
+                if isinstance(df2.columns, pd.MultiIndex):
+                    df2.columns = [
+                        " ".join([str(x) for x in tup if str(x).strip().lower() not in ("nan", "none", "unnamed: 0")]).strip()
+                        for tup in df2.columns.values
+                    ]
+                    df = df2
+            except Exception:
+                pass
+
+        df.columns = _clean_and_dedupe_headers(df.columns)
+        df = _drop_empty_edges(df)
+        df = _coerce_common_types(df)
+        return df
 
 
-def _read_json(path: str) -> pd.DataFrame:
-    try:
-        return pd.read_json(path)  # array/records
-    except Exception:
-        return pd.read_json(path, lines=True)  # JSON lines
-
-
-# =========================
-# Readers (documents)
-# =========================
+# ======================================================
+# 🧩 Readers (Documents)
+# ======================================================
 
 def _docx_text(path: str, max_chars: int = 8000) -> Tuple[str, int]:
     if DocxDocument is None:
@@ -192,14 +319,12 @@ def _docx_text(path: str, max_chars: int = 8000) -> Tuple[str, int]:
     try:
         doc = DocxDocument(path)
         parts = []
-        # paragraphs
         for p in doc.paragraphs:
             t = (p.text or "").strip()
             if t:
                 parts.append(t)
             if sum(len(x) for x in parts) > max_chars:
                 break
-        # a tiny taste of table text
         for tbl in getattr(doc, "tables", [])[:2]:
             for row in tbl.rows[:2]:
                 cells = [c.text.strip() for c in row.cells]
@@ -215,14 +340,12 @@ def _docx_text(path: str, max_chars: int = 8000) -> Tuple[str, int]:
 
 
 def _doc_text(path: str, max_chars: int = 8000) -> Tuple[str, int]:
-    # Legacy .doc support: try textract if available
     if textract is None:
         return ("DOC detected. Install `textract` for legacy .doc parsing.", 0)
     try:
         raw = textract.process(path)
-        text = (raw.decode("utf-8", errors="ignore") if isinstance(raw, (bytes, bytearray)) else str(raw))
-        text = " ".join(text.split())
-        text = text[:max_chars]
+        text = raw.decode("utf-8", errors="ignore") if isinstance(raw, (bytes, bytearray)) else str(raw)
+        text = " ".join(text.split())[:max_chars]
         return text, len(text)
     except Exception as e:
         return (f"DOC parsing error: {e}", 0)
@@ -240,173 +363,107 @@ def _pdf_text(path: str, max_chars: int = 20000) -> Tuple[str, int]:
                 texts.append(t)
             if sum(len(x) for x in texts) > max_chars:
                 break
-        text = " ".join(" ".join(texts).split())
-        text = text[:max_chars]
+        text = " ".join(" ".join(texts).split())[:max_chars]
         return text, len(text)
     except Exception as e:
         return (f"PDF parsing error: {e}", 0)
 
 
-# =========================
-# Public API
-# =========================
+# ======================================================
+# 🧩 Public API
+# ======================================================
 
 def scrutinize_file(file_path: str, original_name: str) -> Dict[str, Any]:
-    """
-    Universal scrutinizer used by the upload route.
-    - file_path: local temp path where the uploaded file is stored
-    - original_name: original filename (for display)
-    Returns a rich dict for UI preview + downstream analysis.
-    """
     ext = os.path.splitext(original_name)[1].lower().lstrip(".")
     size_bytes = os.path.getsize(file_path) if os.path.exists(file_path) else 0
 
-    # ---------- Structured (tabular) ----------
     if ext in ("csv",):
         try:
-            df = _read_csv(file_path)
-            return _structured_result(
-                file_type="csv",
-                original_name=original_name,
-                size_bytes=size_bytes,
-                message=f"CSV detected: {len(df)} rows × {df.shape[1]} columns.",
-                df=df
-            )
+            df = _read_csv_smart(file_path)
+            return _structured_result("csv", original_name, size_bytes,
+                                      f"CSV detected: {len(df)} rows × {df.shape[1]} columns (smart header detection).", df)
         except Exception as e:
             return _structured_result("csv", original_name, size_bytes, f"CSV read error: {e}")
 
     if ext in ("xlsx", "xls"):
         try:
-            df = _read_excel(file_path)
-            return _structured_result(
-                file_type="excel",
-                original_name=original_name,
-                size_bytes=size_bytes,
-                message=f"Excel detected: {len(df)} rows × {df.shape[1]} columns.",
-                df=df
-            )
+            df = _read_excel_smart(file_path)
+            return _structured_result("excel", original_name, size_bytes,
+                                      f"Excel detected: {len(df)} rows × {df.shape[1]} columns (smart header detection).", df)
         except Exception as e:
             return _structured_result("excel", original_name, size_bytes, f"Excel read error: {e}")
 
     if ext in ("json",):
         try:
-            df = _read_json(file_path)
-            if isinstance(df, pd.DataFrame) and not df.empty:
-                return _structured_result(
-                    file_type="json",
-                    original_name=original_name,
-                    size_bytes=size_bytes,
-                    message=f"JSON dataset detected: {len(df)} rows × {df.shape[1]} columns.",
-                    df=df
-                )
-            else:
-                # Non-tabular JSON: return excerpt
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                    raw = f.read(1200)
-                return _structured_result(
-                    file_type="json",
-                    original_name=original_name,
-                    size_bytes=size_bytes,
-                    message="JSON detected (non-tabular).",
-                    df=None,
-                    extras={
-                        "preview": [{"raw_excerpt": raw}],
-                        "confidence": 0.5,
-                        "suggestions": ["Consider row-oriented JSON (array of records) for richer analysis."]
-                    }
-                )
+            df = pd.read_json(file_path)
         except Exception as e:
             return _structured_result("json", original_name, size_bytes, f"JSON read error: {e}")
 
-    # ---------- Unstructured (documents/text) ----------
+        if not df.empty:
+            return _structured_result("json", original_name, size_bytes,
+                                      f"JSON dataset detected: {len(df)} rows × {df.shape[1]} columns.", df)
+        else:
+            try:
+                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                    raw = f.read(1200)
+                return _structured_result("json", original_name, size_bytes, "JSON detected (non-tabular).",
+                                          extras={"preview": [{"raw_excerpt": raw}],
+                                                  "confidence": 0.5,
+                                                  "suggestions": ["Consider array-of-records JSON for richer analysis."]})
+            except Exception as e:
+                return _structured_result("json", original_name, size_bytes, f"JSON file read error: {e}")
+
     if ext in ("docx",):
         text, n = _docx_text(file_path)
-        return _structured_result(
-            file_type="docx",
-            original_name=original_name,
-            size_bytes=size_bytes,
-            message="DOCX detected — extracted summary." if n else text,
-            df=None,
-            extras={
-                "summary_excerpt": _summarize_text(text, 1200),
-                "extracted_chars": n,
-                "confidence": 0.6 if n else 0.4,
-                "suggestions": [
-                    "For table-heavy DOCX, consider exporting tables to CSV/XLSX for deeper analysis.",
-                    "Use the Intelligence module to generate an AI executive summary."
-                ]
-            }
-        )
+        return _structured_result("docx", original_name, size_bytes,
+                                  "DOCX detected — extracted summary." if n else text,
+                                  extras={"summary_excerpt": _summarize_text(text, 1200),
+                                          "extracted_chars": n,
+                                          "confidence": 0.6 if n else 0.4,
+                                          "suggestions": [
+                                              "For table-heavy DOCX, consider exporting tables to CSV/XLSX for deeper analysis.",
+                                              "Use the Intelligence module to generate an AI executive summary."
+                                          ] if n else ["Install `python-docx` to parse DOCX files."]})
 
     if ext in ("doc",):
         text, n = _doc_text(file_path)
-        return _structured_result(
-            file_type="doc",
-            original_name=original_name,
-            size_bytes=size_bytes,
-            message="DOC detected — extracted summary." if n else text,
-            df=None,
-            extras={
-                "summary_excerpt": _summarize_text(text, 1200),
-                "extracted_chars": n,
-                "confidence": 0.55 if n else 0.35,
-                "suggestions": [
-                    "Legacy .doc format detected. Converting to DOCX may improve parsing quality.",
-                    "Export tables to CSV/XLSX for structured analysis."
-                ]
-            }
-        )
+        return _structured_result("doc", original_name, size_bytes,
+                                  "DOC detected — extracted summary." if n else text,
+                                  extras={"summary_excerpt": _summarize_text(text, 1200),
+                                          "extracted_chars": n,
+                                          "confidence": 0.55 if n else 0.35,
+                                          "suggestions": [
+                                              "Legacy .doc format detected. Converting to DOCX may improve parsing quality.",
+                                              "Export tables to CSV/XLSX for structured analysis."
+                                          ] if n else ["Install `textract` to parse legacy DOC files."]})
 
     if ext in ("pdf",):
         text, n = _pdf_text(file_path)
-        return _structured_result(
-            file_type="pdf",
-            original_name=original_name,
-            size_bytes=size_bytes,
-            message="PDF detected — extracted summary." if n else text,
-            df=None,
-            extras={
-                "summary_excerpt": _summarize_text(text, 1200),
-                "extracted_chars": n,
-                "confidence": 0.55 if n else 0.4,
-                "suggestions": [
-                    "For table-heavy PDFs, upload the source CSV/XLSX for best results.",
-                    "Use the Intelligence module to generate an AI executive summary."
-                ]
-            }
-        )
+        return _structured_result("pdf", original_name, size_bytes,
+                                  "PDF detected — extracted summary." if n else text,
+                                  extras={"summary_excerpt": _summarize_text(text, 1200),
+                                          "extracted_chars": n,
+                                          "confidence": 0.55 if n else 0.4,
+                                          "suggestions": [
+                                              "For table-heavy PDFs, upload the source CSV/XLSX for best results.",
+                                              "Use the Intelligence module to generate an AI executive summary."
+                                          ] if n else ["Install `PyPDF2` to parse PDF files."]})
 
     if ext in ("txt",):
         try:
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 text = f.read(16000)
-            return _structured_result(
-                file_type="txt",
-                original_name=original_name,
-                size_bytes=size_bytes,
-                message="Plain text detected.",
-                df=None,
-                extras={
-                    "summary_excerpt": _summarize_text(text, 1200),
-                    "extracted_chars": len(text),
-                    "confidence": 0.6,
-                    "suggestions": [
-                        "If this represents structured data, consider CSV for deeper analysis."
-                    ]
-                }
-            )
+            return _structured_result("txt", original_name, size_bytes, "Plain text detected.",
+                                      extras={"summary_excerpt": _summarize_text(text, 1200),
+                                              "extracted_chars": len(text),
+                                              "confidence": 0.6,
+                                              "suggestions": [
+                                                  "If this represents structured data, consider CSV for deeper analysis."
+                                              ]})
         except Exception as e:
             return _structured_result("txt", original_name, size_bytes, f"TXT read error: {e}")
 
-    # ---------- Fallback ----------
-    return _structured_result(
-        file_type=ext or "unknown",
-        original_name=original_name,
-        size_bytes=size_bytes,
-        message=f"Unsupported or unknown file type: {ext or 'unknown'}",
-        df=None,
-        extras={
-            "confidence": 0.2,
-            "suggestions": ["Try CSV, XLSX, or JSON for structured analysis."]
-        }
-    )
+    return _structured_result(ext or "unknown", original_name, size_bytes,
+                              f"Unsupported or unknown file type: {ext or 'unknown'}",
+                              extras={"confidence": 0.2,
+                                      "suggestions": ["Try CSV, XLSX, or JSON for structured analysis."]})

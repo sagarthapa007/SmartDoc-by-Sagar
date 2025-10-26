@@ -45,16 +45,16 @@ export function useSession() {
   const context = useContext(SessionContext);
   
   if (!context) {
-    console.error('❌ useSession called outside SessionProvider');
+    //console.error('❌ useSession called outside SessionProvider');
     throw new Error("useSession must be used within a SessionProvider");
   }
   
-  console.log('🎯 useSession returning:', { 
-    session: context.session, 
-    hasSetSession: !!context.setSession 
-  });
+  //console.log('🎯 useSession returning:', { 
+  //  session: context.session, 
+  //  hasSetSession: !!context.setSession 
+  //});
   
-  return context;
+  return context; // ✅ FIX: Uncomment this line!
 }
 
 // Default export

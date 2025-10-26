@@ -11,7 +11,7 @@ class ExplorePayload(BaseModel):
     metric: str
     dimension: Optional[str] = None
 
-@router.post("/api/explore")
+@router.post("/explore")
 def explore(payload: ExplorePayload, user=Depends(get_current_user)):
     # viewer+ allowed
     result = explore_query(payload.rows, payload.metric, payload.dimension)

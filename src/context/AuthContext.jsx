@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { fetchOrCreateProfile } from "@/lib/fetchProfile.js";
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
@@ -10,33 +11,37 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Load session + profile
   useEffect(() => {
-    const getInitialSession = async () => {
+    const initializeAuth = async () => {
       const { data } = await supabase.auth.getSession();
-      setSession(data.session);
-      setUser(data.session?.user || null);
-      if (data.session?.user) fetchProfile(data.session.user.id);
+      const currentSession = data?.session;
+      setSession(currentSession);
+      setUser(currentSession?.user || null);
+
+      if (currentSession?.user) {
+        const prof = await fetchOrCreateProfile(currentSession.user);
+        setProfile(prof);
+      }
+
       setLoading(false);
     };
-    getInitialSession();
+    initializeAuth();
 
-    // ✅ Listen to auth changes
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+    // 🔁 Listen for auth changes
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, session) => {
       setSession(session);
-      setUser(session?.user || null);
-      if (session?.user) fetchProfile(session.user.id);
-      else setProfile(null);
+      const activeUser = session?.user || null;
+      setUser(activeUser);
+      if (activeUser) {
+        const prof = await fetchOrCreateProfile(activeUser);
+        setProfile(prof);
+      } else {
+        setProfile(null);
+      }
     });
 
     return () => sub.subscription.unsubscribe();
   }, []);
-
-  // ✅ Profile fetcher
-  async function fetchProfile(userId) {
-    const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
-    if (!error) setProfile(data);
-  }
 
   // ✅ Registration
   async function register(email, password, fullName = "") {
@@ -46,6 +51,10 @@ export function AuthProvider({ children }) {
       options: { data: { full_name: fullName } },
     });
     if (error) throw error;
+    if (data?.user) {
+      const prof = await fetchOrCreateProfile(data.user);
+      setProfile(prof);
+    }
     return data;
   }
 
@@ -53,6 +62,10 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    if (data?.user) {
+      const prof = await fetchOrCreateProfile(data.user);
+      setProfile(prof);
+    }
     return data;
   }
 

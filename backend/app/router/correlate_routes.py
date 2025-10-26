@@ -10,6 +10,6 @@ class CorrelatePayload(BaseModel):
     rows: List[Dict[str, Any]]
     target: str
 
-@router.post("/api/correlate")
+@router.post("/correlate")
 def correlate_api(payload: CorrelatePayload, user=Depends(get_current_user)):
     return correlate(payload.rows, payload.target)
