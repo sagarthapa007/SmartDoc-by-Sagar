@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
-from app.routes.auth_routes import require_role, get_current_user
+from app.router.auth_routes import require_role, get_current_user
 from app.services.analyze import explore_query
 
 router = APIRouter(tags=["explore"])

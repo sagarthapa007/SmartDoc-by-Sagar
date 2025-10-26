@@ -4,7 +4,7 @@ from typing import List
 from app.db import get_db
 from app.models.user import User
 from app.schemas.user import UserOut
-from app.routes.auth_routes import require_role
+from app.router.auth_routes import require_role
 
 router = APIRouter(prefix="/api", tags=["users"])
 

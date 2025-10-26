@@ -102,7 +102,7 @@ export default function Home() {
         transition={{ delay: 0.6 }}
         className="mt-20 text-sm text-gray-400"
       >
-        © {new Date().getFullYear()} SmartDoc Enterprise — Powered by Highland Group
+        © {new Date().getFullYear()} SmartDoc : Inspired by Kiran Paudel, Developed by Sagar
       </motion.footer>
     </motion.div>
   );
