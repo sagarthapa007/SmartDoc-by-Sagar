@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Upload as UploadIcon, Loader, AlertCircle } from "lucide-react";
 import SmartPreviewCard from "@/components/upload/SmartPreviewCard.jsx";
 import { useSession } from "@/context/SessionContext.jsx";
-import { useAnalyzeStore } from "@/store/analyze.store.js";
+import useAnalyzeStore from "@/components/analyzer/analyze.store.js";
 import apiClient from "@/lib/apiClient.js";
 import { useNavigate } from "react-router-dom";
 
@@ -59,7 +59,11 @@ export default function Upload() {
       // ✅ Save scrutiny directly (no detect step)
       setReport(data);
       setDataset(data.scrutiny);
-      setSession((p) => ({ ...p, uploadId: data.upload_id, dataset: data.scrutiny }));
+      setSession((p) => ({
+        ...p,
+        uploadId: data.upload_id,
+        dataset: data.scrutiny,
+      }));
       setProgress(100);
       setStatusMsg("File uploaded & scrutinized successfully ✅");
     } catch (err) {

@@ -81,8 +81,14 @@ export default function Login() {
           {resetMode ? "Reset Password" : "SmartDoc Login"}
         </h1>
 
-        {error && <div className="text-red-500 text-sm mb-4 text-center">{error}</div>}
-        {success && <div className="text-green-500 text-sm mb-4 text-center">{success}</div>}
+        {error && (
+          <div className="text-red-500 text-sm mb-4 text-center">{error}</div>
+        )}
+        {success && (
+          <div className="text-green-500 text-sm mb-4 text-center">
+            {success}
+          </div>
+        )}
 
         {!resetMode ? (
           <form onSubmit={handleSubmit} className="space-y-4">

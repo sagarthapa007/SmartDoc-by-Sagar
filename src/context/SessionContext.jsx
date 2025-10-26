@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import useAnalyzeStore from "@/components/analyzer/analyze.store.js";
 
-
 const SessionContext = createContext();
 
 export function SessionProvider({ children }) {
@@ -53,15 +52,14 @@ export function SessionProvider({ children }) {
   const value = { session, setSession };
 
   return (
-    <SessionContext.Provider value={value}>
-      {children}
-    </SessionContext.Provider>
+    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
   );
 }
 
 export function useSession() {
   const context = useContext(SessionContext);
-  if (!context) throw new Error("useSession must be used within a SessionProvider");
+  if (!context)
+    throw new Error("useSession must be used within a SessionProvider");
   return context;
 }
 

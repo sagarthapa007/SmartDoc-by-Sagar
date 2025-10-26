@@ -23,7 +23,7 @@ import {
   Cpu,
 } from "lucide-react";
 import { useSession } from "@/context/SessionContext.jsx";
-import { useAnalyzeStore } from "@/store/analyze.store.js";
+import useAnalyzeStore from "@/components/analyzer/analyze.store.js";
 import {
   ResponsiveContainer,
   BarChart,

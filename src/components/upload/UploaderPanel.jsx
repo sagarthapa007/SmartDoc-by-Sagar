@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import SmartPreviewCard from "@/components/upload/SmartPreviewCard.jsx";
 import { useSession } from "@/context/SessionContext.jsx";
-import { useAnalyzeStore } from "@/store/analyze.store.js";
+import useAnalyzeStore from "@/components/analyzer/analyze.store.js";
 
 const API_URL = import.meta.env.VITE_API_URL;
 

@@ -7,31 +7,31 @@ export const DOMAIN_VISUALS = {
   finance: {
     charts: ["RevenueTrendChart", "TopPerformersChart"],
     title: "Financial Overview",
-    description: "Revenue trends and top entities based on primary metric."
+    description: "Revenue trends and top entities based on primary metric.",
   },
   hr: {
     charts: ["TopPerformersChart"],
     title: "Human Resources",
-    description: "Department totals or compensation distribution via ranking."
+    description: "Department totals or compensation distribution via ranking.",
   },
   inventory: {
     charts: ["TopPerformersChart"],
     title: "Inventory Analytics",
-    description: "Product quantities and movement patterns."
+    description: "Product quantities and movement patterns.",
   },
   health: {
     charts: ["RevenueTrendChart"],
     title: "Health & Fitness",
-    description: "Progress metrics tracked over time."
+    description: "Progress metrics tracked over time.",
   },
   academic: {
     charts: ["TopPerformersChart"],
     title: "Academic Performance",
-    description: "Subject/course averages and rankings."
+    description: "Subject/course averages and rankings.",
   },
   generic: {
     charts: ["Heatmap", "Histogram"],
     title: "Generic Insights",
-    description: "Correlation and distribution patterns across dataset."
-  }
+    description: "Correlation and distribution patterns across dataset.",
+  },
 };

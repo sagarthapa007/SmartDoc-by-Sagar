@@ -1,1 +1,1 @@
-export const HistoryProvider = ({children})=>children;
+export const HistoryProvider = ({ children }) => children;

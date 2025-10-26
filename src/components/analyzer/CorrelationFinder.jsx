@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useAnalyzeStore } from "@/store/analyze.store.js";
+import useAnalyzeStore from "@/components/analyzer/analyze.store.js";
 
 export default function CorrelationFinder({ dataset = [], onAuto }) {
   const headers = useMemo(() => Object.keys(dataset?.[0] || {}), [dataset]);
@@ -23,7 +23,9 @@ export default function CorrelationFinder({ dataset = [], onAuto }) {
         >
           <option value="">Target column…</option>
           {headers.map((h) => (
-            <option key={h} value={h}>{h}</option>
+            <option key={h} value={h}>
+              {h}
+            </option>
           ))}
         </select>
         <input
@@ -49,14 +51,19 @@ export default function CorrelationFinder({ dataset = [], onAuto }) {
         <ul className="text-sm space-y-1">
           {correlations.correlations.map((c, i) => (
             <li key={i}>
-              <span className="font-medium">{c.feature}</span>: r = {Number(c.r).toFixed(3)}
+              <span className="font-medium">{c.feature}</span>: r ={" "}
+              {Number(c.r).toFixed(3)}
             </li>
           ))}
         </ul>
       ) : correlations?.matrix ? (
-        <div className="text-sm text-gray-500">Correlation matrix computed. Pick a target to see strongest features.</div>
+        <div className="text-sm text-gray-500">
+          Correlation matrix computed. Pick a target to see strongest features.
+        </div>
       ) : (
-        <div className="text-sm text-gray-500">Pick a target to find strongest relationships.</div>
+        <div className="text-sm text-gray-500">
+          Pick a target to find strongest relationships.
+        </div>
       )}
     </div>
   );

@@ -1,1 +1,3 @@
-export function useHistory(){ return { add: ()=>{} } }
+export function useHistory() {
+  return { add: () => {} };
+}

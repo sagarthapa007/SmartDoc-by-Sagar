@@ -1,6 +1,10 @@
 import React from "react";
 
-export default function PreviewTable({ headers = [], rows = [], maxHeight = "300px" }) {
+export default function PreviewTable({
+  headers = [],
+  rows = [],
+  maxHeight = "300px",
+}) {
   if (!headers.length || !rows.length) {
     return (
       <div className="text-sm text-gray-500 text-center py-6">
@@ -29,10 +33,7 @@ export default function PreviewTable({ headers = [], rows = [], maxHeight = "300
         </thead>
         <tbody>
           {rows.slice(0, 20).map((row, i) => (
-            <tr
-              key={i}
-              className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
-            >
+            <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
               {headers.map((h, j) => (
                 <td
                   key={j}

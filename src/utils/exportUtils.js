@@ -2,7 +2,7 @@ export function exportToCSV(data, filename = "SmartDoc_Export.csv") {
   const arr = Array.isArray(data) ? data : [];
   const headers = Object.keys(arr[0] || {});
   const csv = [headers.join(",")]
-    .concat(arr.map(r => headers.map(h => csvEscape(r?.[h])).join(",")))
+    .concat(arr.map((r) => headers.map((h) => csvEscape(r?.[h])).join(",")))
     .join("\n");
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

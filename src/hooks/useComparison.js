@@ -1,1 +1,3 @@
-export function useComparison(){ return { compare: ()=>({}) } }
+export function useComparison() {
+  return { compare: () => ({}) };
+}

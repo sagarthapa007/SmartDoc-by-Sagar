@@ -1,1 +1,3 @@
-export default function UIProvider({children}){ return children; }
+export default function UIProvider({ children }) {
+  return children;
+}
