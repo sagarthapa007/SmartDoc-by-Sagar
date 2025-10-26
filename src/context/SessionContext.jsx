@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useAnalyzeStore } from "@/store/analyze.store.jsx";
+import useAnalyzeStore from "@/components/analyzer/analyze.store.js";
+
 
 const SessionContext = createContext();
 

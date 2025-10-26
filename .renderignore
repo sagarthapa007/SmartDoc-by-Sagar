@@ -2,29 +2,30 @@
 # ☁️ SMARTDOC ENTERPRISE - RENDER DEPLOYMENT IGNORE FILE
 # Purpose: Reduce build size and keep backend deployment clean
 # Applies only to Render build context
-# Updated: 2025-10-26
+# Updated: 2025-10-27
 # =====================================================
 
 # === 🧠 Frontend (Vercel handles it) ===
+# Ignore all React/Vite-related files — keep only backend.
 node_modules/
 dist/
 build/
 src/
 public/
 vite.config.*
-package.json
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
 tailwind.config.*
 postcss.config.*
 tsconfig.*
 *.jsx
 *.tsx
-*.js
-*.ts
 *.css
 *.html
+
+# ⚠️ KEEP root package.json (for metadata) but ignore frontend lockfiles
+# package.json ❌ removed
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
 
 # === ⚙️ Development & Local Files ===
 .vscode/
@@ -80,13 +81,15 @@ nohup.out
 *.out
 
 # === ☁️ Configurations not needed for build ===
-render.yaml
 docker-compose.yml
 Dockerfile
 *.dockerfile
 *.dockerignore
+.renderignore  # safe to keep this out of Render build
+vercel.json
+.vercelignore
 
-# === 🔐 Environment Files ===
+# === 🔐 Environment & Secrets ===
 .env
 .env.*
 backend/.env
@@ -95,8 +98,12 @@ supabase/.env
 supabase/config.json
 supabase/.temp/
 
-# === 🧠 ML Cache ===
+# === 🧠 ML Cache & Large Models ===
 backend/app/ml/data_type_model.pkl
 backend/app/ml/model_cache.pkl
 backend/app/ml/__pycache__/
 backend/app/intelligence/__pycache__/
+backend/app/intelligence/*.joblib
+backend/app/intelligence/*.npy
+backend/app/ml/*.joblib
+backend/app/ml/*.npy
