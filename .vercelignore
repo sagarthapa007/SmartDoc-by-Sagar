@@ -2,7 +2,7 @@
 # 🌐 SMARTDOC ENTERPRISE - VERCEL DEPLOYMENT IGNORE FILE
 # Purpose: Optimize Vercel frontend build (ignore backend, data, ML)
 # Applies only to Vercel builds
-# Updated: 2025-10-26
+# Updated: 2025-10-27
 # =====================================================
 
 # === 🧠 Backend / FastAPI / Python Files ===
@@ -38,7 +38,8 @@ __logs__/
 *.csv
 *.xlsx
 *.xls
-*.json
+# ⚠️ DO NOT ignore all .json files globally (package.json is required!)
+# *.json   ❌ REMOVED
 backend/app/ml/
 backend/app/intelligence/
 backend/app/utils/
@@ -54,11 +55,9 @@ docker-compose.yml
 *.dockerfile
 *.dockerignore
 .supabase/
-.supabase/
 supabase/
 *.env
 .env*
-.env.*
 *.secret
 *.config
 *.bak
@@ -103,6 +102,5 @@ Icon?
 .trash-*
 
 # === ⚙️ Optional: Frontend build cache ===
-# (keep if needed for faster rebuilds)
 .cache/
 .tmp/
