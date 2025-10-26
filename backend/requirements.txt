@@ -38,7 +38,7 @@ typing-inspection==0.4.2
 typing_extensions==4.12.2
 setuptools==80.9.0
 wheel==0.45.1
-pydantic==2.9.2
+pydantic[Email]==2.9.2
 pydantic-settings==2.4.0
 
 # ─────────────────────────────
