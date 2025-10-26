@@ -39,6 +39,7 @@ typing_extensions==4.12.2
 setuptools==80.9.0
 wheel==0.45.1
 pydantic[Email]==2.9.2
+email-validator==2.1.0.post1
 pydantic-settings==2.4.0
 
 # ─────────────────────────────
