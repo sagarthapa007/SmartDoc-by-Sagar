@@ -26,7 +26,7 @@ except Exception:
 
 
 # ======================================================
-# 🧠 Utility Helpers
+# 🧠 Enhanced Utility Helpers
 # ======================================================
 
 
@@ -78,6 +78,31 @@ def _infer_col_type(s: pd.Series) -> str:
 
     return "string"
 
+def _calculate_column_confidence(columns) -> Dict[str, float]:
+    """Calculate confidence score for each column header."""
+    confidence_scores = {}
+    
+    for col in columns:
+        col_str = str(col)
+        
+        # Auto-generated headers have low confidence
+        if col_str.startswith('col_') or 'unnamed' in col_str.lower():
+            confidence_scores[col_str] = 0.3
+        # Hierarchical headers usually have good confidence
+        elif ' | ' in col_str:
+            confidence_scores[col_str] = 0.9
+        # Short generic names have medium confidence
+        elif len(col_str) < 3:
+            confidence_scores[col_str] = 0.6
+        # Descriptive names have high confidence
+        elif len(col_str) > 3 and any(c.isalpha() for c in col_str):
+            confidence_scores[col_str] = 0.85
+        else:
+            confidence_scores[col_str] = 0.7
+            
+    return confidence_scores
+
+
 
 def _schema_from_df(df: pd.DataFrame) -> List[Dict[str, Any]]:
     cols = []
@@ -109,6 +134,35 @@ def _quality_scan(df: pd.DataFrame) -> Dict[str, Any]:
 def _df_preview(df: pd.DataFrame, limit: int = 20) -> List[Dict[str, Any]]:
     return df.head(limit).to_dict(orient="records")
 
+
+def _detect_merged_cells_pattern(df_preview: pd.DataFrame) -> Dict[str, Any]:
+    """Enhanced merged cell detection with column mapping."""
+    patterns = {
+        'repeated_values': {},
+        'empty_clusters': []
+    }
+    
+    # Check for repeated values (common in merged cells)
+    for col in df_preview.columns:
+        value_counts = df_preview[col].value_counts()
+        repeated = value_counts[value_counts > 1].to_dict()
+        if repeated:
+            patterns['repeated_values'][str(col)] = repeated
+    
+    # Check for empty value clusters with column names
+    for col in df_preview.columns:
+        empty_mask = df_preview[col].isna() | (df_preview[col].astype(str).str.strip() == '')
+        if empty_mask.any():
+            empty_groups = empty_mask.ne(empty_mask.shift()).cumsum()
+            cluster_sizes = empty_groups[empty_mask].value_counts()
+            large_clusters = cluster_sizes[cluster_sizes > 2].to_dict()
+            if large_clusters:
+                patterns['empty_clusters'].append({
+                    'column': str(col),  # ✅ Ensure string column names
+                    'cluster_sizes': large_clusters
+                })
+    
+    return patterns
 
 def _structured_result(
     file_type: str,
@@ -145,6 +199,7 @@ def _structured_result(
         base = min(1.0, (math.log10(max(10, len(df))) / 4.0) + (len(df.columns) / 60.0))
         out["confidence"] = round(min(1.0, base), 3)
 
+        # Enhanced suggestions with header intelligence
         sug = []
         if any(v > 0 for v in out["quality"]["numeric_negatives"].values()):
             sug.append("Review negative values in numeric columns.")
@@ -152,6 +207,23 @@ def _structured_result(
             sug.append("Consider imputing or removing columns with >20% missing.")
         if out["columns_detected"] > 30:
             sug.append("High-dimensional data: consider feature selection/PCA.")
+        
+        # Add header intelligence info
+        header_analysis = {
+            'multirow_detected': isinstance(df.columns, pd.MultiIndex),
+            'hierarchical_headers': any(' | ' in str(col) for col in df.columns),
+            'column_confidence_scores': _calculate_column_confidence(df.columns),
+            'merged_cell_patterns': _detect_merged_cells_pattern(df.head(10)),
+            'header_confidence': min(1.0, (len(df.columns) - sum('unnamed' in col.lower() for col in df.columns)) / len(df.columns))
+        }
+        out['header_intelligence'] = header_analysis
+        
+        # Header-specific suggestions
+        if header_analysis['merged_cell_patterns']['empty_clusters']:
+            sug.append("Merged cell patterns detected - verify data structure.")
+        if header_analysis['header_confidence'] < 0.7:
+            sug.append("Low header confidence - review column names.")
+            
         out["suggestions"] = sug or ["Looks good — proceed to analysis."]
     if extras:
         out.update(extras)
@@ -159,32 +231,62 @@ def _structured_result(
 
 
 # ======================================================
-# 🧩 Smart Header Handling & Cleaning
+# 🧩 Enhanced Smart Header Handling & Cleaning
 # ======================================================
 
 
-def _best_header_row_from_sample(sample_rows: List[List[str]]) -> int:
+def _best_header_row_from_sample(sample_rows: List[List[str]]) -> List[int]:
+    """Enhanced: Detect multiple potential header rows with intelligent scoring."""
     if not sample_rows:
-        return 0
+        return [0]
+    
     scores = []
     for i, row in enumerate(sample_rows):
         stripped = [str(c).strip() for c in row if str(c).strip()]
         if not stripped:
             scores.append((i, 0.0))
             continue
+            
+        # Enhanced scoring for header likelihood
+        empty_ratio = sum(1 for c in row if not str(c).strip()) / len(row) if row else 1.0
         avg_len = float(np.mean([len(c) for c in stripped]))
-        score = len(stripped) + 0.5 * avg_len
-        scores.append((i, score))
-    return max(scores, key=lambda x: x[1])[0] if scores else 0
+        unique_ratio = len(set(stripped)) / len(stripped) if stripped else 0
+        text_ratio = sum(1 for c in stripped if not any(char.isdigit() for char in str(c))) / len(stripped)
+        
+        # Score favors: more content, text over numbers, uniqueness, reasonable length
+        score = (len(stripped) * 2 + 
+                avg_len * 0.5 + 
+                unique_ratio * 3 + 
+                text_ratio * 2 - 
+                empty_ratio * 5)
+        
+        scores.append((i, max(0, score)))
+    
+    # Return top 2 candidates sorted by score
+    top_candidates = sorted(scores, key=lambda x: x[1], reverse=True)[:2]
+    return [idx for idx, score in top_candidates if score > 2] or [0]
 
 
 def _clean_and_dedupe_headers(columns) -> List[str]:
+    """Simplest fix: Convert MultiIndex to flat names first."""
+    # Convert MultiIndex to regular Index first
+    if isinstance(columns, pd.MultiIndex):
+        try:
+            # This handles most MultiIndex cases properly
+            columns = columns.get_level_values(0)  # Use first level only
+        except:
+            # Fallback: convert to strings
+            columns = [str(col[0]) if len(col) > 0 else f'col_{i+1}' 
+                      for i, col in enumerate(columns)]
+    
+    # Keep your original deduplication logic below exactly as is
     cleaned, seen = [], {}
     for idx, c in enumerate(columns):
         name = str(c or "").replace("\n", " ").strip()
         name = " ".join(name.split())
         if not name or "unnamed" in name.lower():
             name = f"col_{idx+1}"
+            
         base, k = name, 1
         while name.lower() in seen:
             k += 1
@@ -192,7 +294,6 @@ def _clean_and_dedupe_headers(columns) -> List[str]:
         seen[name.lower()] = True
         cleaned.append(name)
     return cleaned
-
 
 def _drop_empty_edges(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
@@ -222,7 +323,7 @@ def _coerce_common_types(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ======================================================
-# 🧩 Readers (CSV / Excel)
+# 🧩 Enhanced Readers (CSV / Excel) with Intelligent Headers
 # ======================================================
 
 
@@ -240,44 +341,55 @@ def _read_csv_smart(path: str) -> pd.DataFrame:
         except Exception:
             pass
 
-        header_row = 0
+        # Enhanced multi-row header detection
+        header_candidates = [0]  # Default fallback
         if lines:
             try:
-                peek = pd.read_csv(StringIO("".join(lines)), header=None, engine="python")
-                header_row = _best_header_row_from_sample(
-                    peek.fillna("").astype(str).values.tolist()
-                )
+                peek = pd.read_csv(StringIO("".join(lines)), header=None, engine="python", nrows=8)
+                header_candidates = _best_header_row_from_sample(peek.fillna("").astype(str).values.tolist())
             except Exception:
                 pass
 
-        try:
-            df = pd.read_csv(path, engine="python", on_bad_lines="skip", header=header_row)
-        except Exception:
-            df = pd.read_csv(path, engine="python", on_bad_lines="skip", header=None)
+        # Try multi-row headers first, then fall back to single row
+        df = None
+        if len(header_candidates) > 1:
+            try:
+                # Use multiple rows as headers (create MultiIndex)
+                header_rows = header_candidates[:2]  # Use top 2 candidates
+                df = pd.read_csv(path, engine="python", on_bad_lines="skip", header=header_rows)
+                print(f"✅ Using multi-row headers: rows {header_rows}")
+            except Exception:
+                # Fall back to single header row
+                df = None
+
+        if df is None:
+            # Single header row approach
+            header_row = header_candidates[0] if header_candidates else 0
+            try:
+                df = pd.read_csv(path, engine="python", on_bad_lines="skip", header=header_row)
+            except Exception:
+                df = pd.read_csv(path, engine="python", on_bad_lines="skip", header=None)
 
         # Skip non-tabular title rows
         if not df.empty and df.shape[1] == 1 and df.iloc[0].astype(str).str.len().max() > 30:
             df = df.iloc[1:].reset_index(drop=True)
 
+        # Enhanced hierarchical header handling
         if isinstance(df.columns, pd.RangeIndex) or any(
             "unnamed" in str(c).lower() for c in df.columns
         ):
             try:
-                df2 = pd.read_csv(
-                    path, engine="python", on_bad_lines="skip", header=[header_row, header_row + 1]
-                )
+                if len(header_candidates) > 1:
+                    df2 = pd.read_csv(
+                        path, engine="python", on_bad_lines="skip", header=header_candidates[:2]
+                    )
+                else:
+                    df2 = pd.read_csv(
+                        path, engine="python", on_bad_lines="skip", header=[header_candidates[0], header_candidates[0] + 1]
+                    )
                 if isinstance(df2.columns, pd.MultiIndex):
-                    df2.columns = [
-                        " ".join(
-                            [
-                                str(x)
-                                for x in tup
-                                if str(x).strip().lower() not in ("nan", "none", "unnamed: 0")
-                            ]
-                        ).strip()
-                        for tup in df2.columns.values
-                    ]
                     df = df2
+                    print("✅ Using hierarchical headers")
             except Exception:
                 pass
 
@@ -290,38 +402,48 @@ def _read_csv_smart(path: str) -> pd.DataFrame:
 def _read_excel_smart(path: str) -> pd.DataFrame:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=UserWarning)
+        # Enhanced multi-row header detection
         try:
-            peek = pd.read_excel(path, header=None, nrows=6)
-            header_row = _best_header_row_from_sample(peek.fillna("").astype(str).values.tolist())
+            peek = pd.read_excel(path, header=None, nrows=8)
+            header_candidates = _best_header_row_from_sample(peek.fillna("").astype(str).values.tolist())
         except Exception:
-            header_row = 0
+            header_candidates = [0]
 
-        try:
-            df = pd.read_excel(path, header=header_row)
-        except Exception:
-            df = pd.read_excel(path, header=None)
+        # Try multi-row headers first, then fall back to single row
+        df = None
+        if len(header_candidates) > 1:
+            try:
+                # Use multiple rows as headers (create MultiIndex)
+                header_rows = header_candidates[:2]
+                df = pd.read_excel(path, header=header_rows)
+                print(f"✅ Using multi-row headers: rows {header_rows}")
+            except Exception:
+                df = None
+
+        if df is None:
+            # Single header row approach
+            header_row = header_candidates[0] if header_candidates else 0
+            try:
+                df = pd.read_excel(path, header=header_row)
+            except Exception:
+                df = pd.read_excel(path, header=None)
 
         # Skip title-like first row
         if not df.empty and df.shape[1] == 1 and df.iloc[0].astype(str).str.len().max() > 30:
             df = df.iloc[1:].reset_index(drop=True)
 
+        # Enhanced hierarchical header handling
         if isinstance(df.columns, pd.RangeIndex) or any(
             "unnamed" in str(c).lower() for c in df.columns
         ):
             try:
-                df2 = pd.read_excel(path, header=[header_row, header_row + 1])
+                if len(header_candidates) > 1:
+                    df2 = pd.read_excel(path, header=header_candidates[:2])
+                else:
+                    df2 = pd.read_excel(path, header=[header_candidates[0], header_candidates[0] + 1])
                 if isinstance(df2.columns, pd.MultiIndex):
-                    df2.columns = [
-                        " ".join(
-                            [
-                                str(x)
-                                for x in tup
-                                if str(x).strip().lower() not in ("nan", "none", "unnamed: 0")
-                            ]
-                        ).strip()
-                        for tup in df2.columns.values
-                    ]
                     df = df2
+                    print("✅ Using hierarchical headers")
             except Exception:
                 pass
 
@@ -332,7 +454,7 @@ def _read_excel_smart(path: str) -> pd.DataFrame:
 
 
 # ======================================================
-# 🧩 Readers (Documents)
+# 🧩 Readers (Documents) - Unchanged
 # ======================================================
 
 
@@ -397,7 +519,7 @@ def _pdf_text(path: str, max_chars: int = 20000) -> Tuple[str, int]:
 
 
 # ======================================================
-# 🧩 Public API
+# 🧩 Public API - Unchanged Interface
 # ======================================================
 
 

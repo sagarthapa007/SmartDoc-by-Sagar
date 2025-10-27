@@ -16,6 +16,11 @@ export function SessionProvider({ children }) {
   // ✅ Automatically mirror Zustand → Context
   useEffect(() => {
     if (dataset) {
+      // ✅ ADD THIS CHECK - ensure dataset is not a function
+      if (typeof dataset === 'function') {
+        console.warn('⚠️ Dataset is a function, skipping sync to session');
+        return;
+      }
       setSessionState((prev) => ({
         ...prev,
         dataset,
@@ -25,6 +30,11 @@ export function SessionProvider({ children }) {
 
   useEffect(() => {
     if (analysis) {
+      // ✅ ADD THIS CHECK - ensure analysis is not a function
+      if (typeof analysis === 'function') {
+        console.warn('⚠️ Analysis is a function, skipping sync to session');
+        return;
+      }
       setSessionState((prev) => ({
         ...prev,
         analysis,
@@ -37,11 +47,35 @@ export function SessionProvider({ children }) {
       setSessionState((prev) => {
         const newSession = update(prev);
         console.log("🔄 Session updated (function):", newSession);
-        return { ...prev, ...newSession };
+        
+        // ✅ ADD THIS CHECK - ensure dataset/analysis are not functions
+        const sanitizedSession = { ...newSession };
+        if (typeof sanitizedSession.dataset === 'function') {
+          console.warn('⚠️ Preventing function from being set as dataset');
+          sanitizedSession.dataset = null;
+        }
+        if (typeof sanitizedSession.analysis === 'function') {
+          console.warn('⚠️ Preventing function from being set as analysis');
+          sanitizedSession.analysis = null;
+        }
+        
+        return { ...prev, ...sanitizedSession };
       });
     } else {
       console.log("🔄 Session updated (object):", update);
-      setSessionState((prev) => ({ ...prev, ...update }));
+      
+      // ✅ ADD THIS CHECK for object updates too
+      const sanitizedUpdate = { ...update };
+      if (typeof sanitizedUpdate.dataset === 'function') {
+        console.warn('⚠️ Preventing function from being set as dataset');
+        sanitizedUpdate.dataset = null;
+      }
+      if (typeof sanitizedUpdate.analysis === 'function') {
+        console.warn('⚠️ Preventing function from being set as analysis');
+        sanitizedUpdate.analysis = null;
+      }
+      
+      setSessionState((prev) => ({ ...prev, ...sanitizedUpdate }));
     }
   };
 

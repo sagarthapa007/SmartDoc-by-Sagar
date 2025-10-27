@@ -17,11 +17,42 @@ async function getAuthHeaders(extra = {}) {
 }
 
 // Normalize diverse dataset shapes from different endpoints
+// Replace the current normalizeDataset function with this:
 function normalizeDataset(ds) {
   if (!ds) return null;
-  if (ds.scrutiny) return ds.scrutiny; // /upload response
-  if (ds.analysis) return ds.analysis; // /analyze response
-  if (Array.isArray(ds.preview)) return ds; // raw from file_scrutinizer
+  
+  // Case 1: Already has scrutiny field (from upload response)
+  if (ds.scrutiny) {
+    return ds.scrutiny;
+  }
+  
+  // Case 2: Analysis response from /analyze endpoint
+  if (ds.upload_id || ds.summary || ds.insights) {
+    console.log('📊 Received analysis response, storing as analysis');
+    return null; // This should go to setAnalysis, not setDataset
+  }
+  
+  // Case 3: Raw scrutiny result (from file_scrutinizer)
+  if (Array.isArray(ds.preview) || ds.headers || ds.rows_detected) {
+    return ds;
+  }
+  
+  // Case 4: PDF/DOCX scrutiny result (non-tabular)
+  if (ds.file_type && ['pdf', 'docx', 'doc', 'txt'].includes(ds.file_type.toLowerCase())) {
+    console.log('📄 Non-tabular file detected, creating minimal dataset');
+    return {
+      headers: ['content'],
+      rows: ds.summary_excerpt ? [{ content: ds.summary_excerpt }] : [],
+      preview: ds.summary_excerpt ? [{ content: ds.summary_excerpt }] : [],
+      file_type: ds.file_type,
+      original_name: ds.original_name,
+      is_tabular: false,
+      extracted_content: ds.summary_excerpt
+    };
+  }
+  
+  // Case 5: Unknown structure
+  console.warn('❓ Unknown dataset structure:', ds);
   return ds;
 }
 
@@ -53,33 +84,48 @@ export const useAnalyzeStore = create(
 
       // ---- Setters ----
       setDataset: (ds) => {
-        const normalized = normalizeDataset(ds);
-        const columns =
-          normalized?.headers ??
-          normalized?.columns ??
-          normalized?.columns_detected ??
-          [];
-        const rows =
-          normalized?.rows ??
-          normalized?.preview ??
-          normalized?.rows_detected ??
-          [];
+  // ✅ SAFETY CHECK - BLOCK FUNCTIONS
+  if (typeof ds === 'function') {
+    console.warn('❌ setDataset received function, skipping');
+    return;
+  }
 
-        if (columns.length && rows.length) {
-          console.log(
-            `📊 Dataset updated: ${columns.length} columns, ${rows.length} rows`,
-          );
-        } else {
-          console.warn("⚠️ Dataset structure incomplete:", normalized);
-        }
+  const normalized = normalizeDataset(ds);
+  
+  // Handle case where normalizeDataset returns null (analysis data)
+  if (!normalized) {
+    console.log('📊 Normalized dataset is null, likely analysis data');
+    return;
+  }
 
-        try {
-          localStorage.setItem("smartdoc_dataset", JSON.stringify(normalized));
-        } catch {}
-        set({ dataset: normalized, lastUpdated: new Date().toISOString() });
+  const columns = normalized?.headers || [];
+  const rows = normalized?.rows || normalized?.preview || [];
+
+  if (columns.length && rows.length) {
+    console.log(
+      `📊 Dataset updated: ${columns.length} columns, ${rows.length} rows`,
+    );
+  } else if (normalized?.is_tabular === false) {
+    console.log(
+      `📄 Non-tabular file: ${normalized.file_type}`,
+    );
+  } else {
+    console.warn("⚠️ Dataset structure incomplete:", normalized);
+  }
+
+  try {
+    localStorage.setItem("smartdoc_dataset", JSON.stringify(normalized));
+  } catch {}
+  set({ dataset: normalized, lastUpdated: new Date().toISOString() });
       },
 
       setAnalysis: (result) => {
+        // ✅ SAFETY CHECK - BLOCK FUNCTIONS
+        if (typeof result === 'function') {
+          console.warn('❌ setAnalysis received function, skipping');
+          return;
+        }
+        
         if (!result) return;
         try {
           localStorage.setItem("smartdoc_analysis", JSON.stringify(result));

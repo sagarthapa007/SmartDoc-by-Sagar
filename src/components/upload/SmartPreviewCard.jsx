@@ -1,23 +1,39 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, FileText, Database } from "lucide-react";
+import { CheckCircle, FileText, Database, AlertTriangle, Layers } from "lucide-react";
 import PreviewTable from "@/components/analyzer/PreviewTable.jsx";
 
 export default function SmartPreviewCard({ report, onConfirm }) {
   if (!report) return null;
 
-  // Handle unified shape
+  // Handle unified shape with enhanced intelligence
   const scrutiny = report.scrutiny || {};
   const fileType = (report.filetype || scrutiny.file_type || "").toLowerCase();
   const isTabular = ["csv", "excel", "json", "xlsx", "xls"].some((t) =>
     fileType.includes(t),
   );
 
+  // Enhanced data extraction
   const suggestions = scrutiny.suggestions || [];
   const preview = scrutiny.preview || [];
   const schema = scrutiny.schema || [];
   const rows = scrutiny.rows_detected || 0;
   const cols = scrutiny.columns_detected || 0;
+  
+  // Intelligent header data
+  const headers = scrutiny.headers || [];
+  const headerIntelligence = scrutiny.header_intelligence || {};
+  const hasMultiRowHeaders = headerIntelligence.multirow_detected;
+  const headerConfidence = headerIntelligence.header_confidence || 0;
+  const mergedCellPatterns = headerIntelligence.merged_cell_patterns || {};
+  
+  // Determine the best headers to display
+  const displayHeaders = headers.length > 0 ? headers : 
+                        preview.length > 0 ? Object.keys(preview[0]) : [];
+
+  // Header quality indicators
+  const hasHeaderIssues = headerConfidence < 0.7 || 
+                         mergedCellPatterns.empty_clusters?.length > 0;
 
   return (
     <AnimatePresence>
@@ -54,6 +70,47 @@ export default function SmartPreviewCard({ report, onConfirm }) {
 
         {/* Content */}
         <div className="p-5">
+          {/* Header Intelligence Status */}
+          {isTabular && (
+            <div className="mb-4 p-3 border rounded-lg bg-blue-50">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                  <Layers className="w-4 h-4" />
+                  Header Detection
+                </h3>
+                <div className={`text-xs px-2 py-1 rounded-full ${
+                  headerConfidence > 0.8 ? 'bg-green-100 text-green-800' :
+                  headerConfidence > 0.6 ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {Math.round(headerConfidence * 100)}% Confidence
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                {hasMultiRowHeaders && (
+                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full flex items-center gap-1">
+                    <Layers className="w-3 h-3" />
+                    Multi-row Headers
+                  </span>
+                )}
+                
+                {mergedCellPatterns.empty_clusters?.length > 0 && (
+                  <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    Merged Cell Patterns
+                  </span>
+                )}
+                
+                {headers.length === 0 && (
+                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                    Auto-generated Headers
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Summary / Suggestions */}
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-gray-800 mb-2">
@@ -62,6 +119,11 @@ export default function SmartPreviewCard({ report, onConfirm }) {
 
             {isTabular ? (
               <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
+                {hasHeaderIssues && (
+                  <li className="text-orange-600 font-medium">
+                    Review column headers for accuracy
+                  </li>
+                )}
                 {suggestions.length ? (
                   suggestions.map((s, i) => <li key={i}>{s}</li>)
                 ) : (
@@ -79,11 +141,19 @@ export default function SmartPreviewCard({ report, onConfirm }) {
           {/* Table Preview */}
           {isTabular && preview.length > 0 && (
             <div className="border rounded-lg mb-4 overflow-x-auto">
-              <PreviewTable
-                headers={Object.keys(preview[0])}
-                rows={preview}
-                maxHeight="300px"
-              />
+              <div className="p-3 bg-gray-50 border-b">
+                <h4 className="text-sm font-semibold text-gray-700">
+                  Data Preview {hasMultiRowHeaders && "(Multi-row Headers)"}
+                </h4>
+              </div>
+
+            <PreviewTable
+              headers={displayHeaders}
+              rows={preview}
+              maxHeight="300px"
+              headerIntelligence={headerIntelligence}
+              showHeaderQuality={hasHeaderIssues}
+            />
             </div>
           )}
 
@@ -102,7 +172,13 @@ export default function SmartPreviewCard({ report, onConfirm }) {
                     <span className="truncate max-w-[120px]" title={col.name}>
                       {col.name}
                     </span>
-                    <span className="text-blue-600 font-semibold">
+                    <span className={`font-semibold ${
+                      col.type === 'string' ? 'text-gray-600' :
+                      col.type === 'number' ? 'text-blue-600' :
+                      col.type === 'datetime' ? 'text-purple-600' :
+                      col.type === 'boolean' ? 'text-green-600' :
+                      'text-orange-600'
+                    }`}>
                       {col.type}
                     </span>
                   </div>

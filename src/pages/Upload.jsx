@@ -32,49 +32,52 @@ export default function Upload() {
 
   // ✅ Upload (includes built-in scrutiny)
   const handleUpload = async () => {
-    if (!file) return;
-    setLoading(true);
-    setError("");
-    setProgress(0);
-    setStatusMsg("Uploading...");
+  if (!file) return;
+  setLoading(true);
+  setError("");
+  setProgress(0);
+  setStatusMsg("Uploading...");
 
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
 
-      const res = await apiClient.post("upload", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (e) => {
-          if (e.total) {
-            const percent = Math.round((e.loaded * 100) / e.total);
-            setProgress(percent);
-            setStatusMsg(`Uploading ${percent}%`);
-          }
-        },
-      });
+    const res = await apiClient.post("upload", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: (e) => {
+        if (e.total) {
+          const percent = Math.round((e.loaded * 100) / e.total);
+          setProgress(percent);
+          setStatusMsg(`Uploading ${percent}%`);
+        }
+      },
+    });
 
-      const data = res.data;
-      console.log("✅ Upload Response:", data);
+    const data = res.data;
+    console.log("✅ Upload Response:", data);
 
-      // ✅ Save scrutiny directly (no detect step)
-      setReport(data);
-      setDataset(data.scrutiny);
-      setSession((p) => ({
-        ...p,
-        uploadId: data.upload_id,
-        dataset: data.scrutiny,
-      }));
-      setProgress(100);
-      setStatusMsg("File uploaded & scrutinized successfully ✅");
-    } catch (err) {
-      console.error("Upload error:", err);
-      setError(err.response?.data?.detail || err.message || "Upload failed");
-      setStatusMsg("Upload failed ❌");
-    } finally {
-      setLoading(false);
-      setTimeout(() => setStatusMsg(""), 1500);
-    }
-  };
+    // ✅ Save scrutiny directly (no detect step)
+    setReport(data);
+    
+    // ✅ FIXED: Pass the complete data object, not just data.scrutiny
+    setDataset(data);
+    
+    // ✅ Fix - pass the actual data object
+    setSession({
+      uploadId: data.upload_id,
+      dataset: data.scrutiny,  // Now it's the actual data
+    });
+    setProgress(100);
+    setStatusMsg("File uploaded & scrutinized successfully ✅");
+  } catch (err) {
+    console.error("Upload error:", err);
+    setError(err.response?.data?.detail || err.message || "Upload failed");
+    setStatusMsg("Upload failed ❌");
+  } finally {
+    setLoading(false);
+    setTimeout(() => setStatusMsg(""), 1500);
+  }
+};
 
   // ✅ Confirm and analyze
   const confirmAndAnalyze = async (report) => {
@@ -113,11 +116,11 @@ export default function Upload() {
         );
       }
 
-      setSession((p) => ({
-        ...p,
+      // ✅ Fix  
+      setSession({
         analysis: res.data,
         uploadId: report.upload_id,
-      }));
+      });
 
       // ✅ optional: store for history
       sessionStorage.setItem("latest_upload_id", report.upload_id);

@@ -21,6 +21,9 @@ import {
   Filter,
   Clock,
   Cpu,
+  Smartphone,
+  Tablet,
+  Monitor,
 } from "lucide-react";
 import { useSession } from "@/context/SessionContext.jsx";
 import useAnalyzeStore from "@/components/analyzer/analyze.store.js";
@@ -42,9 +45,9 @@ import {
   Legend,
 } from "recharts";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
-/* Enhanced Card component with more features */
+/* Enhanced Card component with mobile responsiveness */
 const Card = ({
   title,
   icon: Icon,
@@ -53,6 +56,7 @@ const Card = ({
   className = "",
   actions,
   loading = false,
+  fullWidth = false,
 }) => {
   const colorMap = {
     blue: {
@@ -89,23 +93,25 @@ const Card = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-2xl border ${colors.border} bg-white shadow-sm hover:shadow-md transition-all duration-300 ${className}`}
+      className={`rounded-2xl border ${colors.border} bg-white shadow-sm hover:shadow-md transition-all duration-300 ${
+        fullWidth ? "w-full" : ""
+      } ${className}`}
     >
       <div
         className={`flex items-center justify-between px-4 py-3 border-b ${colors.border} ${colors.bg}`}
       >
-        <div className="flex items-center gap-2">
-          <Icon className={colors.icon} size={18} />
-          <h3 className="font-semibold text-sm">{title}</h3>
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Icon className={`${colors.icon} flex-shrink-0`} size={18} />
+          <h3 className="font-semibold text-sm truncate">{title}</h3>
         </div>
-        {actions && <div className="flex items-center gap-1">{actions}</div>}
+        {actions && <div className="flex items-center gap-1 flex-shrink-0 ml-2">{actions}</div>}
       </div>
       <div className="p-4">{loading ? <LoadingShimmer /> : children}</div>
     </motion.div>
   );
 };
 
-/* Enhanced loading shimmer with different variants */
+/* Enhanced loading shimmer */
 const LoadingShimmer = ({ lines = 3, variant = "default" }) => {
   if (variant === "chart") {
     return (
@@ -151,9 +157,27 @@ const formatNumber = (num) => {
   return num.toString();
 };
 
+/* Mobile detection hook */
+const useMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
 export default function Analyze() {
   const { session } = useSession();
-  const { dataset, setDataset } = useAnalyzeStore();
+  const { dataset, setDataset, analysis: storeAnalysis } = useAnalyzeStore();
+  const isMobile = useMobile();
 
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -161,18 +185,18 @@ export default function Analyze() {
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  // Use analysis from store if available, otherwise local state
+  const currentAnalysis = storeAnalysis || analysis;
 
   // Automatically trigger analysis when dataset/upload is ready
   useEffect(() => {
-    const uploadId =
-      session?.uploadId || sessionStorage.getItem("latest_upload_id");
-    if (!uploadId) return;
+    const uploadId = session?.uploadId || sessionStorage.getItem("latest_upload_id");
+    if (!uploadId || currentAnalysis) return;
 
-    // ✅ Prevent duplicate runs if analysis already exists
-    if (!analysis) {
-      runAnalysis(uploadId);
-    }
-  }, [session?.uploadId]);
+    runAnalysis(uploadId);
+  }, [session?.uploadId, currentAnalysis]);
 
   const runAnalysis = async (uploadId) => {
     setLoading(true);
@@ -191,40 +215,41 @@ export default function Analyze() {
         });
       }, 300);
 
-      // ✅ Ensure scrutiny structure matches backend v6.3 expectations
+      // ✅ FIXED: Ensure scrutiny structure matches backend expectations
       const body = {
         upload_id: uploadId,
-        scrutiny:
-          dataset?.scrutiny ||
-          (dataset?.preview ? dataset : { preview: dataset }) ||
-          {},
+        scrutiny: dataset?.scrutiny || dataset || { preview: dataset?.preview || [] },
       };
 
-      const res = await axios.post(`${API_URL}/api/analyze`, body, {
+      const res = await axios.post(`${API_URL}/analyze`, body, {
         headers: { "Content-Type": "application/json" },
       });
 
       clearInterval(progressInterval);
       setProgress(100);
-      setAnalysis(res.data);
+      
+      // ✅ FIXED: Update both local state and store properly
+      const analysisData = res.data;
+      setAnalysis(analysisData);
 
-      // ✅ Preserve existing dataset while appending analysis info
-      setDataset((prev) => ({
-        ...prev,
-        analysis: res.data,
+      // ✅ FIXED: Pass object instead of function to setDataset
+      const updatedDataset = {
+        ...dataset,
+        analysis: analysisData,
         lastUpdated: new Date().toISOString(),
-      }));
+      };
+      setDataset(updatedDataset);
 
       setLastUpdated(new Date().toLocaleTimeString());
 
-      // ✅ Smooth scroll to top after analysis completion
+      // Smooth scroll to top after analysis completion
       window.scrollTo({ top: 0, behavior: "smooth" });
 
-      // ✅ Cache analysis for re-use
+      // Cache analysis for re-use
       localStorage.setItem(
         `analysis_${uploadId}`,
         JSON.stringify({
-          data: res.data,
+          data: analysisData,
           timestamp: new Date().toISOString(),
         }),
       );
@@ -232,7 +257,7 @@ export default function Analyze() {
       console.error("Analysis error:", err);
       setError(err.response?.data?.detail || "Failed to analyze file");
 
-      // ✅ Fallback to cached result if network/API fails
+      // Fallback to cached result if network/API fails
       const cached = localStorage.getItem(`analysis_${uploadId}`);
       if (cached) {
         const { data } = JSON.parse(cached);
@@ -249,15 +274,15 @@ export default function Analyze() {
   };
 
   const exportAnalysis = useCallback(async () => {
-    if (!analysis) return;
+    if (!currentAnalysis) return;
 
     setExporting(true);
     try {
       const report = {
-        summary: analysis.summary,
-        insights: analysis.insights,
-        recommendations: analysis.recommendations,
-        metadata: analysis.metadata,
+        summary: currentAnalysis.summary,
+        insights: currentAnalysis.insights,
+        recommendations: currentAnalysis.recommendations,
+        metadata: currentAnalysis.metadata,
         exportedAt: new Date().toISOString(),
       };
 
@@ -277,15 +302,15 @@ export default function Analyze() {
     } finally {
       setExporting(false);
     }
-  }, [analysis, session?.uploadId]);
+  }, [currentAnalysis, session?.uploadId]);
 
   const shareAnalysis = useCallback(async () => {
-    if (!analysis) return;
+    if (!currentAnalysis) return;
 
     try {
       const shareData = {
         title: "AI Analysis Report",
-        text: analysis.summary,
+        text: currentAnalysis.summary,
         url: window.location.href,
       };
 
@@ -298,7 +323,7 @@ export default function Analyze() {
     } catch (err) {
       console.error("Share failed:", err);
     }
-  }, [analysis]);
+  }, [currentAnalysis]);
 
   const renderCharts = useCallback((charts) => {
     if (!charts?.length) {
@@ -313,12 +338,12 @@ export default function Analyze() {
     return (
       <div className="space-y-6">
         {charts.map((chart, i) => {
-          const chartData = chart.labels.map((label, idx) => ({
+          const chartData = chart.labels?.map((label, idx) => ({
             name: label,
-            value: chart.values[idx],
+            value: chart.values?.[idx] || 0,
             label: label,
             ...chart,
-          }));
+          })) || [];
 
           if (chart.type === "bar") {
             return (
@@ -330,7 +355,7 @@ export default function Analyze() {
                   <BarChartIcon size={16} className="text-blue-600" />
                   <h4 className="text-sm font-semibold">{chart.title}</h4>
                 </div>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={isMobile ? 200 : 250}>
                   <BarChart
                     data={chartData}
                     margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
@@ -338,12 +363,12 @@ export default function Analyze() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis
                       dataKey="name"
-                      tick={{ fontSize: 11 }}
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
+                      tick={{ fontSize: isMobile ? 10 : 11 }}
+                      angle={isMobile ? -45 : 0}
+                      textAnchor={isMobile ? "end" : "middle"}
+                      height={isMobile ? 80 : 60}
                     />
-                    <YAxis tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: isMobile ? 10 : 11 }} />
                     <Tooltip
                       formatter={(value) => [formatNumber(value), chart.title]}
                       labelFormatter={(label) => `Category: ${label}`}
@@ -368,16 +393,16 @@ export default function Analyze() {
                   <PieChartIcon size={16} className="text-purple-600" />
                   <h4 className="text-sm font-semibold">{chart.title}</h4>
                 </div>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={isMobile ? 200 : 250}>
                   <PieChart>
                     <Pie
                       data={chartData}
                       dataKey="value"
                       nameKey="name"
-                      outerRadius={80}
-                      innerRadius={40}
+                      outerRadius={isMobile ? 60 : 80}
+                      innerRadius={isMobile ? 30 : 40}
                       label={({ name, percent }) =>
-                        `${name} (${(percent * 100).toFixed(1)}%)`
+                        isMobile ? `${(percent * 100).toFixed(0)}%` : `${name} (${(percent * 100).toFixed(1)}%)`
                       }
                       labelLine={false}
                     >
@@ -395,7 +420,7 @@ export default function Analyze() {
                     <Tooltip
                       formatter={(value) => [formatNumber(value), "Count"]}
                     />
-                    <Legend />
+                    {!isMobile && <Legend />}
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -410,11 +435,11 @@ export default function Analyze() {
                   <TrendingUp size={16} className="text-green-600" />
                   <h4 className="text-sm font-semibold">{chart.title}</h4>
                 </div>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={isMobile ? 200 : 250}>
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
+                    <XAxis dataKey="name" tick={{ fontSize: isMobile ? 10 : 11 }} />
+                    <YAxis tick={{ fontSize: isMobile ? 10 : 11 }} />
                     <Tooltip />
                     <Line
                       type="monotone"
@@ -424,9 +449,9 @@ export default function Analyze() {
                       dot={{
                         fill: CHART_COLORS.gradient[1],
                         strokeWidth: 2,
-                        r: 4,
+                        r: isMobile ? 3 : 4,
                       }}
-                      activeDot={{ r: 6, fill: CHART_COLORS.gradient[0] }}
+                      activeDot={{ r: isMobile ? 4 : 6, fill: CHART_COLORS.gradient[0] }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -437,7 +462,7 @@ export default function Analyze() {
         })}
       </div>
     );
-  }, []);
+  }, [isMobile]);
 
   const renderInsights = useCallback(
     (insights) => (
@@ -471,33 +496,297 @@ export default function Analyze() {
   );
 
   const analysisMetadata = useMemo(() => {
-    if (!analysis) return null;
+    if (!currentAnalysis) return null;
 
     return {
-      documentType: analysis.metadata?.document_type || "unknown",
-      analysisVersion: analysis.metadata?.analysis_version || "1.0",
+      documentType: currentAnalysis.metadata?.document_type || "unknown",
+      analysisVersion: currentAnalysis.metadata?.analysis_version || "1.0",
       timestamp: lastUpdated,
-      chartCount: analysis.charts?.length || 0,
-      insightCount: analysis.insights?.length || 0,
-      recommendationCount: analysis.recommendations?.length || 0,
+      chartCount: currentAnalysis.charts?.length || 0,
+      insightCount: currentAnalysis.insights?.length || 0,
+      recommendationCount: currentAnalysis.recommendations?.length || 0,
     };
-  }, [analysis, lastUpdated]);
+  }, [currentAnalysis, lastUpdated]);
+
+  // Mobile tabs for better navigation
+  const mobileTabs = [
+    { id: "overview", label: "Overview", icon: Database },
+    { id: "insights", label: "Insights", icon: Brain },
+    { id: "charts", label: "Charts", icon: BarChart3 },
+    { id: "actions", label: "Actions", icon: CheckCircle },
+  ];
+
+  const renderMobileView = () => (
+    <div className="space-y-4">
+      {/* Mobile Tabs */}
+      <div className="flex border-b border-gray-200 overflow-x-auto">
+        {mobileTabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors whitespace-nowrap ${
+              activeTab === tab.id
+                ? "border-blue-500 text-blue-600 bg-blue-50"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <tab.icon size={16} />
+            <span className="text-sm font-medium">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className="space-y-4">
+        {activeTab === "overview" && (
+          <>
+            <Card title="Executive Summary" icon={Database} fullWidth>
+              {currentAnalysis.summary ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {currentAnalysis.summary}
+                  </p>
+                </div>
+              ) : (
+                <LoadingShimmer />
+              )}
+            </Card>
+            
+            <Card title="Quick Stats" icon={TrendingUp} color="purple" fullWidth>
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div className="p-3 bg-purple-50 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {analysisMetadata?.insightCount || 0}
+                  </div>
+                  <div className="text-xs text-purple-600 mt-1">Insights</div>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {analysisMetadata?.chartCount || 0}
+                  </div>
+                  <div className="text-xs text-blue-600 mt-1">Charts</div>
+                </div>
+              </div>
+            </Card>
+          </>
+        )}
+
+        {activeTab === "insights" && (
+          <Card title="AI Insights & Patterns" icon={Brain} fullWidth>
+            {renderInsights(currentAnalysis.insights)}
+          </Card>
+        )}
+
+        {activeTab === "charts" && (
+          <Card title="Data Visualizations" icon={BarChart3} fullWidth>
+            {renderCharts(currentAnalysis.charts)}
+          </Card>
+        )}
+
+        {activeTab === "actions" && (
+          <>
+            <Card title="Actionable Recommendations" icon={CheckCircle} color="green" fullWidth>
+              {currentAnalysis.recommendations?.length ? (
+                <ul className="space-y-3">
+                  {currentAnalysis.recommendations.map((r, i) => (
+                    <motion.li
+                      key={i}
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-100 group hover:bg-green-100 transition-colors"
+                    >
+                      <CheckCircle
+                        size={16}
+                        className="text-green-600 mt-0.5 flex-shrink-0"
+                      />
+                      <span className="text-sm leading-relaxed">{r}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-center py-8 text-gray-500 text-sm">
+                  <CheckCircle size={32} className="mx-auto mb-2 opacity-50" />
+                  No recommendations available.
+                </div>
+              )}
+            </Card>
+
+            <Card title="Export & Share" icon={Share2} color="amber" fullWidth>
+              <div className="space-y-3">
+                <button
+                  onClick={exportAnalysis}
+                  disabled={exporting}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                >
+                  <Download size={16} />
+                  {exporting ? "Exporting..." : "Export Report"}
+                </button>
+                <button
+                  onClick={shareAnalysis}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                >
+                  <Share2 size={16} />
+                  Share Analysis
+                </button>
+              </div>
+            </Card>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderDesktopView = () => (
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      {/* Left Column - Summary & Insights */}
+      <div className="space-y-6">
+        <Card
+          title="Executive Summary"
+          icon={Database}
+          actions={<Cpu size={14} className="text-gray-400" />}
+        >
+          {currentAnalysis.summary ? (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {currentAnalysis.summary}
+              </p>
+              {analysisMetadata && (
+                <div className="flex items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
+                  <span>Version: {analysisMetadata.analysisVersion}</span>
+                  <span>Charts: {analysisMetadata.chartCount}</span>
+                  <span>Insights: {analysisMetadata.insightCount}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <LoadingShimmer />
+          )}
+        </Card>
+
+        <Card title="AI Insights & Patterns" icon={Brain} loading={loading}>
+          {renderInsights(currentAnalysis.insights)}
+        </Card>
+      </div>
+
+      {/* Middle Column - Charts & Visualizations */}
+      <div className="space-y-6">
+        <Card
+          title="Data Visualizations"
+          icon={BarChart3}
+          actions={
+            <Filter
+              size={14}
+              className="text-gray-400 hover:text-gray-600 cursor-pointer"
+            />
+          }
+          loading={loading}
+        >
+          {renderCharts(currentAnalysis.charts)}
+        </Card>
+      </div>
+
+      {/* Right Column - Recommendations & Metadata */}
+      <div className="space-y-6">
+        <Card
+          title="Actionable Recommendations"
+          icon={CheckCircle}
+          color="green"
+          loading={loading}
+        >
+          {currentAnalysis.recommendations?.length ? (
+            <ul className="space-y-3">
+              {currentAnalysis.recommendations.map((r, i) => (
+                <motion.li
+                  key={i}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-100 group hover:bg-green-100 transition-colors"
+                >
+                  <CheckCircle
+                    size={16}
+                    className="text-green-600 mt-0.5 flex-shrink-0"
+                  />
+                  <span className="text-sm leading-relaxed">{r}</span>
+                </motion.li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-center py-8 text-gray-500 text-sm">
+              <CheckCircle size={32} className="mx-auto mb-2 opacity-50" />
+              No recommendations available.
+            </div>
+          )}
+        </Card>
+
+        <Card title="Analysis Metadata" icon={FileText} color="purple">
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-600">Document Type</span>
+              <span className="font-medium capitalize">
+                {analysisMetadata?.documentType?.replace(/_/g, " ") || "Unknown"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-600">Analysis Version</span>
+              <span className="font-medium">
+                {analysisMetadata?.analysisVersion}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-600">Charts Generated</span>
+              <span className="font-medium">
+                {analysisMetadata?.chartCount}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-gray-600">Last Updated</span>
+              <span className="font-medium">
+                {analysisMetadata?.timestamp}
+              </span>
+            </div>
+          </div>
+        </Card>
+
+        <Card title="Export & Share" icon={Zap} color="amber">
+          <div className="space-y-3">
+            <button
+              onClick={exportAnalysis}
+              disabled={exporting}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm"
+            >
+              <Download size={14} />
+              {exporting ? "Exporting..." : "Export Report"}
+            </button>
+            <button
+              onClick={shareAnalysis}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm"
+            >
+              <Share2 size={14} />
+              Share Analysis
+            </button>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10">
+    <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
       {/* Enhanced Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg">
-            <Sparkles size={22} className="text-white" />
+            <Sparkles size={isMobile ? 18 : 22} className="text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              Smart Analysis Dashboard
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              Smart Analysis
             </h1>
-            <p className="text-sm text-gray-600 mt-1">
-              AI-powered insights from your uploaded data or documents
-              {analysisMetadata && (
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              Kiran Inspired - Sagar Developed insights from your data
+              {analysisMetadata && !isMobile && (
                 <span className="ml-2 text-xs bg-gray-100 px-2 py-1 rounded">
                   {analysisMetadata.documentType.replace("_", " ")}
                 </span>
@@ -506,15 +795,15 @@ export default function Analyze() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {lastUpdated && (
+        <div className="flex items-center gap-3 flex-wrap">
+          {lastUpdated && !isMobile && (
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Clock size={14} />
               Last updated: {lastUpdated}
             </div>
           )}
 
-          {analysis && (
+          {currentAnalysis && !isMobile && (
             <div className="flex items-center gap-2">
               <button
                 onClick={exportAnalysis}
@@ -538,7 +827,7 @@ export default function Analyze() {
           <button
             onClick={() => runAnalysis(session?.uploadId)}
             disabled={loading || !session?.uploadId}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all disabled:opacity-50 shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all disabled:opacity-50 shadow-sm text-sm sm:text-base"
           >
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
             {loading ? `Analyzing... ${Math.round(progress)}%` : "Re-Analyze"}
@@ -586,164 +875,30 @@ export default function Analyze() {
         </motion.div>
       )}
 
-      {!analysis ? (
+      {!currentAnalysis ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center py-20 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50/50"
+          className="text-center py-16 sm:py-20 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50/50"
         >
-          <FileText size={48} className="mx-auto text-gray-400 mb-4" />
+          <FileText size={isMobile ? 32 : 48} className="mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-semibold text-gray-600 mb-2">
             No Analysis Data
           </h3>
-          <p className="text-gray-500 max-w-md mx-auto mb-6">
-            Upload a file and analyze it to see AI-powered insights,
-            visualizations, and recommendations.
+          <p className="text-gray-500 max-w-md mx-auto mb-6 px-4 text-sm sm:text-base">
+            Upload a file and analyze it to see AI-powered insights, visualizations, and recommendations.
           </p>
           <a
             href="/upload"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all shadow-sm"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all shadow-sm text-sm sm:text-base"
           >
             <Upload size={16} /> Go to Upload
           </a>
         </motion.div>
+      ) : isMobile ? (
+        renderMobileView()
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Left Column - Summary & Insights */}
-          <div className="space-y-6">
-            <Card
-              title="Executive Summary"
-              icon={Database}
-              actions={<Cpu size={14} className="text-gray-400" />}
-            >
-              {analysis.summary ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {analysis.summary}
-                  </p>
-                  {analysisMetadata && (
-                    <div className="flex items-center gap-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
-                      <span>Version: {analysisMetadata.analysisVersion}</span>
-                      <span>Charts: {analysisMetadata.chartCount}</span>
-                      <span>Insights: {analysisMetadata.insightCount}</span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <LoadingShimmer />
-              )}
-            </Card>
-
-            <Card title="AI Insights & Patterns" icon={Brain} loading={loading}>
-              {renderInsights(analysis.insights)}
-            </Card>
-          </div>
-
-          {/* Middle Column - Charts & Visualizations */}
-          <div className="space-y-6">
-            <Card
-              title="Data Visualizations"
-              icon={BarChart3}
-              actions={
-                <Filter
-                  size={14}
-                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
-                />
-              }
-              loading={loading}
-            >
-              {renderCharts(analysis.charts)}
-            </Card>
-          </div>
-
-          {/* Right Column - Recommendations & Metadata */}
-          <div className="space-y-6">
-            <Card
-              title="Actionable Recommendations"
-              icon={CheckCircle}
-              color="green"
-              loading={loading}
-            >
-              {analysis.recommendations?.length ? (
-                <ul className="space-y-3">
-                  {analysis.recommendations.map((r, i) => (
-                    <motion.li
-                      key={i}
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-100 group hover:bg-green-100 transition-colors"
-                    >
-                      <CheckCircle
-                        size={16}
-                        className="text-green-600 mt-0.5 flex-shrink-0"
-                      />
-                      <span className="text-sm leading-relaxed">{r}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="text-center py-8 text-gray-500 text-sm">
-                  <CheckCircle size={32} className="mx-auto mb-2 opacity-50" />
-                  No recommendations available.
-                </div>
-              )}
-            </Card>
-
-            <Card title="Analysis Metadata" icon={FileText} color="purple">
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-600">Document Type</span>
-                  <span className="font-medium capitalize">
-                    {analysisMetadata?.documentType?.replace(/_/g, " ") ||
-                      "Unknown"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-600">Analysis Version</span>
-                  <span className="font-medium">
-                    {analysisMetadata?.analysisVersion}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-gray-600">Charts Generated</span>
-                  <span className="font-medium">
-                    {analysisMetadata?.chartCount}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-gray-600">Last Updated</span>
-                  <span className="font-medium">
-                    {analysisMetadata?.timestamp}
-                  </span>
-                </div>
-              </div>
-            </Card>
-
-            <Card title="Processing Details" icon={Zap} color="amber">
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Clock size={14} />
-                  <span>Analysis completed at {lastUpdated}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Cpu size={14} />
-                  <span>AI-powered analysis engine</span>
-                </div>
-                {analysis.log && (
-                  <div className="mt-3 p-2 bg-amber-50 rounded border border-amber-200">
-                    <div className="text-xs font-medium text-amber-800 mb-1">
-                      Processing Log:
-                    </div>
-                    <div className="text-xs text-amber-700 whitespace-pre-line">
-                      {analysis.log}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
-        </div>
+        renderDesktopView()
       )}
     </div>
   );
