@@ -36,7 +36,7 @@ export default function Upload() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await axios.post(`${API_URL}/api/upload`, fd);
+      const res = await axios.post(`${API_URL}/upload`, fd);
       setReport(res.data);
       setSession((p) => ({ ...p, uploadId: res.data.upload_id }));
     } catch (e) {
@@ -49,7 +49,7 @@ export default function Upload() {
     if (!report?.upload_id) return;
     setLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/api/analyze`, {
+      const res = await axios.post(`${API_URL}/analyze`, {
         upload_id: report.upload_id,
       });
       setDataset(res.data);
