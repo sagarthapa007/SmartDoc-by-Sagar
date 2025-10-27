@@ -146,6 +146,12 @@ test_output/
 .sublime-workspace
 .code-workspace
 
+# Ignore compiled Procfile
+Procfile.pyc
+Procfile.py
+procfile
+
+
 # === 🗂️ Temporary or Local Assets ===
 backend/test_*.json
 samples/
