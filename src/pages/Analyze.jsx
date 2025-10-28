@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
+import apiClient from "@/lib/apiClient.js";
 import {
   Sparkles,
   Database,
@@ -221,9 +221,7 @@ export default function Analyze() {
         scrutiny: dataset?.scrutiny || dataset || { preview: dataset?.preview || [] },
       };
 
-      const res = await axios.post(`${API_URL}/analyze`, body, {
-        headers: { "Content-Type": "application/json" },
-      });
+      const res = await apiClient.post("analyze", body);
 
       clearInterval(progressInterval);
       setProgress(100);

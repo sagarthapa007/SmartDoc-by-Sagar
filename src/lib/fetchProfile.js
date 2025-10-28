@@ -28,7 +28,7 @@ export async function fetchOrCreateProfile(user) {
 
     const { data: newProfile, error: insertError } = await supabase
       .from("profiles")
-      .insert([insertData])
+      .upsert([insertData], { onConflict: "id" })
       .select()
       .single();
 
